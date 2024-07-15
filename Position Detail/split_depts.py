@@ -102,6 +102,25 @@ def aggregateByJob(df):
         'FY25 Adopted FTE': 'sum'
     })
 
+def addSubtotalRow(sheet, n_rows, n_cols):
+    # Add a sum row at the bottom for the last 14 columns
+    sum_row = n_rows + 1
+    sheet[f"A{sum_row}"] = "Total"
+    for col in range(n_cols - len(MONTHS), n_cols + 1):
+        col_letter = get_column_letter(col)
+        sheet[f"{col_letter}{sum_row}"] = f"=SUM({col_letter}2:{col_letter}{n_rows})"
+
+def addStyling(sheet, n_rows):
+    # Style the header row: bold font and white font
+    header_font = Font(bold=True, color="FFFFFF")
+    for cell in sheet[1]:
+        cell.font = header_font
+    # Style the total row: dark blue fill and white font
+    total_fill = PatternFill(start_color="00008B", end_color="00008B", fill_type="solid")
+    for cell in sheet[n_rows+1]:
+        cell.font = header_font
+        cell.fill = total_fill
+
 
 # Function to add DataFrame to an openpyxl workbook and convert to table
 def df_to_workbook(df, table_name, output_file):
@@ -119,9 +138,14 @@ def df_to_workbook(df, table_name, output_file):
 
             addFormulaCol(sheet)
 
-            # Create the table with styling
+            # get dimensions
             n_cols = df.shape[1]
             n_rows = df.shape[0] + 1  # including the header row
+
+            # add row for substotals
+            addSubtotalRow(sheet, n_rows, n_cols)
+
+            # create table with styling
             tab = Table(displayName=table_name, ref=f"A1:{get_column_letter(n_cols)}{n_rows}")
             style = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
                                     showLastColumn=False, showRowStripes=True, showColumnStripes=False)
@@ -131,10 +155,7 @@ def df_to_workbook(df, table_name, output_file):
             # adjust col widths to fit content
             adjustColWidth(sheet)
 
-            # Style the header row: bold font and white font
-            header_font = Font(bold=True, color="FFFFFF")
-            for cell in sheet[1]:
-                cell.font = header_font
+            addStyling(sheet, n_rows)
 
             wb.save(output_file)  # Save the workbook
 

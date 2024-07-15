@@ -110,16 +110,34 @@ def addSubtotalRow(sheet, n_rows, n_cols):
         col_letter = get_column_letter(col)
         sheet[f"{col_letter}{sum_row}"] = f"=SUM({col_letter}2:{col_letter}{n_rows})"
 
-def addStyling(sheet, n_rows):
+def format_columns_decimals(sheet, columns, n_row, decimal_places=2):
+    """
+    Apply number formatting to columns to have exactly two decimal places.
+    """
+    number_format = f"0.{''.join(['0'] * decimal_places)}"
+
+    for col_idx in columns:
+        for row in range(1, n_row + 1):
+            sheet.cell(row=row, column=col_idx).number_format = number_format
+
+def addStyling(sheet, n_rows, n_cols):
+    # adjust col widths to fit content
+    adjustColWidth(sheet)
+
     # Style the header row: bold font and white font
     header_font = Font(bold=True, color="FFFFFF")
     for cell in sheet[1]:
         cell.font = header_font
+
     # Style the total row: dark blue fill and white font
     total_fill = PatternFill(start_color="00008B", end_color="00008B", fill_type="solid")
-    for cell in sheet[n_rows+1]:
+    for cell in sheet[n_rows]:
         cell.font = header_font
         cell.fill = total_fill
+    
+    # add decimal styling to all FTE cols
+    cols = range(n_cols - len(MONTHS), n_cols + 1) 
+    format_columns_decimals(sheet, cols, n_rows)
 
 
 # Function to add DataFrame to an openpyxl workbook and convert to table
@@ -144,6 +162,7 @@ def df_to_workbook(df, table_name, output_file):
 
             # add row for substotals
             addSubtotalRow(sheet, n_rows, n_cols)
+            n_rows += 1
 
             # create table with styling
             tab = Table(displayName=table_name, ref=f"A1:{get_column_letter(n_cols)}{n_rows}")
@@ -152,10 +171,8 @@ def df_to_workbook(df, table_name, output_file):
             tab.tableStyleInfo = style
             sheet.add_table(tab)
 
-            # adjust col widths to fit content
-            adjustColWidth(sheet)
-
-            addStyling(sheet, n_rows)
+            # ADD SYLING
+            addStyling(sheet, n_rows, n_cols)
 
             wb.save(output_file)  # Save the workbook
 

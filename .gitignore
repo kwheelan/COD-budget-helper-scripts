@@ -1,0 +1,8 @@
+# ignore any zipped files, the inputs, or the outputs
+*.zipped
+*.zip
+*.xlsx
+'Position Detail by Department'/*
+
+# ignore venv
+venv/

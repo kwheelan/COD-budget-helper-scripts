@@ -4,6 +4,7 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, PatternFill
 
 # fiscal year
 FY = 25
@@ -25,6 +26,9 @@ COLUMNS = [
 
 # months of the fiscal year
 MONTHS = [
+    'Apr',
+    'May',
+    'June',
     'Jul',
     'Aug',
     'Sept',
@@ -39,8 +43,10 @@ MONTHS = [
     'June'
 ]
 
+NEW_CAL_YEAR_IX = MONTHS.index('Jan')
+
 def adjustColWidth(sheet):
-     # Auto-adjust column widths
+    # Auto-adjust column widths
     for col in sheet.columns:
         max_length = 0
         column = col[0].column_letter  # Get the column name
@@ -59,8 +65,8 @@ def selectCols(df):
 
 def addCols(df):
     for i in range(12):
-        year = FY - (i <= 6)
-        label = f"{MONTHS[i]}'{year}"
+        year = FY - (i < NEW_CAL_YEAR_IX)
+        label = f"{MONTHS[i]}'{year} PAs"
         df = df.assign(**{label: pd.NA})
     return df
 
@@ -116,6 +122,13 @@ def df_to_workbook(df, table_name, output_file):
             # adjust col widths to fit content
             adjustColWidth(sheet)
 
+            # Style the header row: bold font and white fill
+            header_font = Font(bold=True)
+            header_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            for cell in sheet[1]:
+                cell.font = header_font
+                cell.fill = header_fill
+
             wb.save(output_file)  # Save the workbook
 
     except Exception as e:
@@ -154,8 +167,8 @@ def create_workbooks(input_file, sheet_name, split_column):
 
 if __name__ == "__main__":
     # Define input parameters
-    input_file = "Full_Position_Data.xlsx"  
-    sheet_name = f"FY{FY} Position Detail"  
-    split_column = "Department Name"  
+    input_file = "Full_Position_Data.xlsx"
+    sheet_name = f"FY{FY} Position Detail"
+    split_column = "Department Name"
     
     create_workbooks(input_file, sheet_name, split_column)

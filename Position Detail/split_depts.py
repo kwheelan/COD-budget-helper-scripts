@@ -1,7 +1,7 @@
 import pandas as pd
 import os
-from openpyxl import load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
+# from openpyxl import load_workbook
+# from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill
@@ -40,7 +40,8 @@ MONTHS = [
     'March',
     'April',
     'May',
-    'June'
+    'June',
+    'Placeholder for sum'
 ]
 
 NEW_CAL_YEAR_IX = MONTHS.index('Jan')
@@ -63,8 +64,13 @@ def adjustColWidth(sheet):
 def selectCols(df):
     return df[COLUMNS]
 
+def remove_numbers_dashes(df, columns):
+    for col in columns:
+        df.loc[:, col] = df[col].astype(str).str.replace(r'[\d-]', '', regex=True).str.strip()
+    return df
+
 def addCols(df):
-    for i in range(12):
+    for i in range(len(MONTHS)):
         year = FY - (i < NEW_CAL_YEAR_IX)
         label = f"{MONTHS[i]}'{year} PAs"
         df = df.assign(**{label: pd.NA})
@@ -72,12 +78,12 @@ def addCols(df):
 
 def addFormulaCol(sheet):
     # Add a new column 'FY24 Amended FTE's' that sums the previous 13 columns
-    last_col = sheet.max_column + 1
+    last_col = sheet.max_column
     formula_col_letter = get_column_letter(last_col)
     sheet.cell(row=1, column=last_col, value=f"FY{FY} Amended FTE")
     
     for row in range(2, sheet.max_row + 1):
-        sum_range = f"{get_column_letter(last_col-13)}{row}:{get_column_letter(last_col-1)}{row}"
+        sum_range = f"{get_column_letter(last_col-len(MONTHS))}{row}:{get_column_letter(last_col-1)}{row}"
         sheet[f"{formula_col_letter}{row}"] = f"=SUM({sum_range})"
 
 def aggregateByJob(df):
@@ -101,6 +107,7 @@ def aggregateByJob(df):
 def df_to_workbook(df, table_name, output_file):
     # trim data to delete unneccessary cols
     df = selectCols(df)
+    df = remove_numbers_dashes(df, ['Appropriation Name', 'Cost Center Name', 'Fund Name'])
     df = aggregateByJob(df)
     df = addCols(df)
     try:
@@ -113,7 +120,9 @@ def df_to_workbook(df, table_name, output_file):
             addFormulaCol(sheet)
 
             # Create the table with styling
-            tab = Table(displayName=table_name, ref=f"A1:{chr(65 + df.shape[1])}{df.shape[0] + 1}")
+            n_cols = df.shape[1]
+            n_rows = df.shape[0] + 1  # including the header row
+            tab = Table(displayName=table_name, ref=f"A1:{get_column_letter(n_cols)}{n_rows}")
             style = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
                                     showLastColumn=False, showRowStripes=True, showColumnStripes=False)
             tab.tableStyleInfo = style
@@ -122,12 +131,10 @@ def df_to_workbook(df, table_name, output_file):
             # adjust col widths to fit content
             adjustColWidth(sheet)
 
-            # Style the header row: bold font and white fill
-            header_font = Font(bold=True)
-            header_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+            # Style the header row: bold font and white font
+            header_font = Font(bold=True, color="FFFFFF")
             for cell in sheet[1]:
                 cell.font = header_font
-                cell.fill = header_fill
 
             wb.save(output_file)  # Save the workbook
 

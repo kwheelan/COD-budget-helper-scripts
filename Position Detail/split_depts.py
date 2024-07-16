@@ -5,30 +5,21 @@ import os
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill
+import re
+
+# filter out warnings for now
+import warnings
+warnings.filterwarnings("ignore")
 
 # fiscal year
 FY = 25
-
-# columns to keep
-COLUMNS = [
-    'Department',
-    'Fund',
-    'Fund Name',
-    'Appropriation',
-    'Appropriation Name',
-    'Cost Center',
-    'Cost Center Name',
-    'Account String',
-    'Job Code',
-    'Job Title',
-    'FY25 Adopted FTE'
-]
 
 # months of the fiscal year
 MONTHS = [
     'Apr',
     'May',
     'June',
+    'Placeholder for sum as of Jul 1',
     'Jul',
     'Aug',
     'Sept',
@@ -46,6 +37,23 @@ MONTHS = [
 
 NEW_CAL_YEAR_IX = MONTHS.index('Jan')
 
+def fixLeadingZeroes(df, col, charLength):
+    df[col] = df[col].astype(str).apply(lambda x: x.zfill(charLength) if len(x) < charLength else str(x))
+    return df
+
+def adjustCodes(df):
+    # make sure that all job codes are at least 6 characters and add zeroes if not
+    df = fixLeadingZeroes(df, 'Job Code', charLength=6)
+    df = fixLeadingZeroes(df, 'Appropriation', charLength=5)
+    df = fixLeadingZeroes(df, 'Cost Center', charLength=6)
+    df = fixLeadingZeroes(df, 'Department', charLength=2)
+    return df
+
+def createAccountString(df):
+    df = adjustCodes(df)
+    df.loc[:, 'Account String'] = df['Department'] + df['Appropriation'] + df['Cost Center'] + df['Job Code']
+    return df
+
 def adjustColWidth(sheet):
     # Auto-adjust column widths
     for col in sheet.columns:
@@ -53,7 +61,8 @@ def adjustColWidth(sheet):
         column = col[0].column_letter  # Get the column name
         for cell in col:
             try:
-                if len(str(cell.value)) > max_length:
+                # exclude formulas but otherwise add padding to the longest cell in the col
+                if ("=" not in cell.value) and (len(str(cell.value)) > max_length):
                     max_length = len(cell.value)
             except:
                 pass
@@ -61,34 +70,35 @@ def adjustColWidth(sheet):
         adjusted_width = (max_length + 5)
         sheet.column_dimensions[column].width = adjusted_width
 
-def selectCols(df):
-    return df[COLUMNS]
-
 def remove_numbers_dashes(df, columns):
     for col in columns:
         df.loc[:, col] = df[col].astype(str).str.replace(r'[\d-]', '', regex=True).str.strip()
     return df
 
 def addCols(df):
+    ncols = len(df.columns)
     for i in range(len(MONTHS)):
         year = FY - (i < NEW_CAL_YEAR_IX)
         label = f"{MONTHS[i]}'{year} PAs"
         df = df.assign(**{label: pd.NA})
-    return df
+    # move AMJ to let of adopted FTE
+    cols = df.columns.tolist()  # Get a list of all column names
+    cols.insert(ncols+2, cols.pop(cols.index(f'FY{FY} Adopted FTE')))  # Pop the specified column and insert it at the beginning
+    return df[cols]
 
-def addFormulaCol(sheet):
+def addFormulaCol(sheet, column_number, n_cols_to_sum, col_name):
     # Add a new column 'FY24 Amended FTE's' that sums the previous 13 columns
-    last_col = sheet.max_column
-    formula_col_letter = get_column_letter(last_col)
-    sheet.cell(row=1, column=last_col, value=f"FY{FY} Amended FTE")
+    formula_col_letter = get_column_letter(column_number)
+    sheet.cell(row=1, column=column_number, value=col_name)
     
     for row in range(2, sheet.max_row + 1):
-        sum_range = f"{get_column_letter(last_col-len(MONTHS))}{row}:{get_column_letter(last_col-1)}{row}"
+        sum_range = f"{get_column_letter(column_number-n_cols_to_sum)}{row}:{get_column_letter(column_number-1)}{row}"
         sheet[f"{formula_col_letter}{row}"] = f"=SUM({sum_range})"
 
 def aggregateByJob(df):
     # add an ID column
-    return df.groupby(['Account String', 'Job Code']).agg({
+    df = createAccountString(df)
+    return df.groupby(['Account String']).agg({
         'Department' : 'first',
         'Fund' : 'first',
         'Fund Name' : 'first',
@@ -99,16 +109,25 @@ def aggregateByJob(df):
         'Account String' : 'first',
         'Job Code' : 'first',
         'Job Title' : 'first',
-        'FY25 Adopted FTE': 'sum'
+        f'FY{FY} Adopted FTE': 'sum'
     })
 
-def addSubtotalRow(sheet, n_rows, n_cols):
-    # Add a sum row at the bottom for the last 14 columns
-    sum_row = n_rows + 1
-    sheet[f"A{sum_row}"] = "Total"
-    for col in range(n_cols - len(MONTHS), n_cols + 1):
+
+def addSubtotalRow(sheet, table_name, n_cols, start_col_idx):
+    table = sheet.tables[table_name]
+    table.showTotalRow = True  # Ensure the table's total row is shown
+
+    # Extract the total row index correctly
+    end_cell = table.ref.split(':')[1]
+    total_row_idx = int(re.findall(r'\d+', end_cell)[0]) + 1  # Extract the row number and add 1
+    
+    # Set the "Total" label in the first column of the total row
+    sheet[f"A{total_row_idx}"] = "Total"
+    
+    # Apply the SUBTOTAL function to the last 16 columns
+    for col in range(start_col_idx, n_cols + 1):
         col_letter = get_column_letter(col)
-        sheet[f"{col_letter}{sum_row}"] = f"=SUM({col_letter}2:{col_letter}{n_rows})"
+        sheet[f"{col_letter}{total_row_idx}"] = f"=SUBTOTAL(109, {col_letter}2:{col_letter}{total_row_idx - 1})"
 
 def format_columns_decimals(sheet, columns, n_row, decimal_places=2):
     """
@@ -143,41 +162,44 @@ def addStyling(sheet, n_rows, n_cols):
 # Function to add DataFrame to an openpyxl workbook and convert to table
 def df_to_workbook(df, table_name, output_file):
     # trim data to delete unneccessary cols
-    df = selectCols(df)
-    df = remove_numbers_dashes(df, ['Appropriation Name', 'Cost Center Name', 'Fund Name'])
     df = aggregateByJob(df)
+    df = remove_numbers_dashes(df, ['Appropriation Name', 'Cost Center Name', 'Fund Name'])
     df = addCols(df)
-    try:
-        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False)
+    with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
 
-            wb = writer.book
-            sheet = wb.active
+        wb = writer.book
+        sheet = wb.active
 
-            addFormulaCol(sheet)
+        # add a column to show starting point for positions as of July 1st
+        addFormulaCol(sheet, 15, 4, f"FY{FY} Amended FTE as of 7/1/{FY-1}")
 
-            # get dimensions
-            n_cols = df.shape[1]
-            n_rows = df.shape[0] + 1  # including the header row
+        # add a total column at the end
+        addFormulaCol(sheet, sheet.max_column, 13, f"FY{FY} Amended FTE")
 
-            # add row for substotals
-            addSubtotalRow(sheet, n_rows, n_cols)
-            n_rows += 1
+        # get dimensions
+        n_cols = df.shape[1]
+        n_rows = df.shape[0] + 1  # including the header row
 
-            # create table with styling
-            tab = Table(displayName=table_name, ref=f"A1:{get_column_letter(n_cols)}{n_rows}")
-            style = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
-                                    showLastColumn=False, showRowStripes=True, showColumnStripes=False)
-            tab.tableStyleInfo = style
-            sheet.add_table(tab)
+        # create table with styling
+        tab = Table(displayName=table_name, ref=f"A1:{get_column_letter(n_cols)}{n_rows}")
+        style = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False,
+                                showLastColumn=False, showRowStripes=True, showColumnStripes=False)
+        tab.tableStyleInfo = style
+        sheet.add_table(tab)
 
-            # ADD SYLING
-            addStyling(sheet, n_rows, n_cols)
+        # Add subtotal row for specific columns
+        start_col_idx = n_cols - 17  # Adjust as necessary for your situation
+        addSubtotalRow(sheet, table_name, n_cols, start_col_idx)
 
-            wb.save(output_file)  # Save the workbook
+        # add row for substotals
+        #addSubtotalRow(sheet, n_rows, n_cols)
+        n_rows += 1
 
-    except Exception as e:
-        print(f"Failed to write workbook {output_file}: {e}")
+        # ADD SYLING
+        addStyling(sheet, n_rows, n_cols)
+
+        wb.save(output_file)  # Save the workbook
 
 
 def create_workbooks(input_file, sheet_name, split_column):

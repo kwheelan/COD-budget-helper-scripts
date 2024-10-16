@@ -16,11 +16,11 @@ import pandas as pd
 # ===================== Constants ===============================
 
 # File paths
-ROOT = 'Procurement'
-source_file = os.listdir('Procurement/procurement_data')[0]
+ROOT = 'Data'
+source_file = os.listdir(f'{ROOT}/procurement_data')[0]
 source_file_path = f'{ROOT}/procurement_data/{source_file}'
-# dest_folder = f'{ROOT}/detail_sheets'
-dest_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets'
+dest_folder = f'{ROOT}/detail_sheets'
+# dest_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets'
 
 # Sheet names
 source_sheet_name = 'Formatted Data for Detail Sheet'

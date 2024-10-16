@@ -6,3 +6,7 @@
 
 # ignore venv
 venv/
+
+# ignore all data
+input_data/
+output/

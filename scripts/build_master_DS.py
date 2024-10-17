@@ -40,7 +40,7 @@ SHEETS = {
 
 def move_data(detail_sheet, destination_file):
     # Load DS worksheet
-    source_wb = load_workbook(f'{source_folder}/{detail_sheet}', data_only=False)
+    source_wb = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
     destination_wb = load_workbook(destination_file, data_only=False)
 
     # iterate through the tabs
@@ -61,7 +61,7 @@ def move_data(detail_sheet, destination_file):
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder)[0:1]:
+    for detail_sheet in os.listdir(source_folder)[0:2]:
 
         # only attempt on excel sheets (exlude folder, etc)
         if '.xlsx' not in detail_sheet:

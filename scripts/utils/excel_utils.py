@@ -7,6 +7,7 @@ Utility functions for handling Excel sheets
 """
 
 from copy import copy
+import openpyxl
 
 # default exports
 __all__ = ['copy_cell', 'copy_cols']
@@ -49,24 +50,20 @@ def find_next_open_row(sheet):
     :param sheet: An openpyxl worksheet object.
     :return: The row number of the first completely empty row.
     """
-    for row in sheet.iter_rows(min_row=1, max_col=1, values_only=True):
+    if type(sheet) == openpyxl.Workbook:
+        raise TypeError("The object passed is a Workbook, expected a Worksheet.")
+    
+    for row_index, row in enumerate(sheet.iter_rows(min_row=1, max_col=1, values_only=True), start=1):
         if all(cell is None for cell in row):
-            return sheet.iter_rows(min_row=1, max_col=1).index(row) + 1
-            
+            return row_index
     return sheet.max_row + 1
 
 
 # function to copy given columns 
-def copy_cols(source_data, destination_ws, columns_to_move, column_destinations = None, destination_row_start=None):
+def copy_cols(source_ws, destination_ws, columns_to_move, 
+              column_destinations = None, destination_row_start=None, source_row_start=None):
     """
-    Copy columns from filtered data to a destination worksheet.
-
-    Args:
-        columns_to_move (list of int): Column indices from the source data to be moved (0-based or letters).
-        column_destinations (list of str): Corresponding column indices in the destination worksheet (0-based or letters).
-        source_data (list of list): Source data as a list of rows.
-        destination_ws (worksheet): Destination worksheet.
-        destination_row_start (int): Row number in destination worksheet to start copying (1-based index).
+    Copy columns one worksheet to another
 
     Returns:
         None
@@ -77,26 +74,19 @@ def copy_cols(source_data, destination_ws, columns_to_move, column_destinations 
 
     # If no specified start row, paste into next open row
     if not destination_row_start:
-        find_next_open_row(destination_ws)
+        destination_row_start = find_next_open_row(destination_ws)
+    if not source_row_start:
+        source_row_start = 1
 
     # convert columns if necessary
-    columns_to_move = [col_to_letter(n) for n in columns_to_move if type(n) is int]
-    column_destinations = [letter_to_col(l) for l in column_destinations if type(l) is str]
+    if (type(columns_to_move[0]) is str):
+        columns_to_move = [letter_to_col(l) for l in columns_to_move]
+    if (type(column_destinations[0]) is str):
+        column_destinations =  [letter_to_col(l) for l in column_destinations]
 
-    for col_ix in range(len(columns_to_move)):
-        for row_ix, row_data in enumerate(source_data):
-            # Get the right column value from the source data
-            try:
-                source_col_value = row_data[columns_to_move[col_ix]]
-            except:
-                print(f'row_data: {row_data}')
-                print(f'columns_to_move: {columns_to_move}')
-                print(f'columns_to_move[col_ix]: {columns_to_move[col_ix]}')
-
-            # get column to paste to
-            new_col = column_destinations[col_ix]
-            # Determine the destination cell
-            dest_cell = destination_ws[f'{new_col}{row_ix + destination_row_start}']
-            
-            # Copy the value to the destination cell
-            dest_cell.value = source_col_value
+    for col in range(len(columns_to_move)):
+        for row in range(source_row_start, source_ws.max_row + 1):
+            source_cell = source_ws.cell(row = row, column = col + 1)
+            dest_cell = destination_ws.cell(row = destination_row_start + row - 1, 
+                                            column = col + 1)
+            copy_cell(source_cell, dest_cell)

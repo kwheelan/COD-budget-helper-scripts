@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 import os
 import shutil
 # import custom functions
-from utils.excel_utils import copy_cols
+from utils.excel_utils import copy_cols, last_data_row
 
 # ===================== Constants ===============================
 
@@ -23,38 +23,53 @@ dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 # Sheet name, columns to copy, start row
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
-        'cols' : list('ABCDEFGHIJLMNPQRSTUVZ') + ['AE', 'AH'],
+        'value_cols' : list('ABCDEFGHIJLMNPQRSTUVZ') + ['AE', 'AH'],
+        'formula_cols' : list('KOWXY') + ['AA', 'AB', 'AC', 'AD', 'AF', 'AG'],
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
-        'cols' : list('ABCDEFGHIJKLNOPQRX'),
+        'value_cols' : list('ABCDEFGHIJKLNOPQRX'),
+        'formula_cols' : list('MSTUVW'),
         'start_row' : 15 },
     'Non-Personnel' : {
-        'cols': list('ABCDEFGHIJKLMOPQRSTUVWXYZ'),
+        'value_cols': list('ABCDEFGHIJKLMOPQRSTUVWXYZ'),
+        'formula_cols' : 'N',
         'start_row' : 19 },
     'Revenue' : {
-        'cols': list('ABCDEFGHIJKLMNPQRSTUVW'),
+        'value_cols': list('ABCDEFGHIJKLMNPQRSTUVW'),
+        'formula_cols' : 'O',
         'start_row' : 15 }
 }
 
 # ================== Script functions ===================================
 
 def move_data(detail_sheet, destination_file):
-    # Load DS worksheet
-    source_wb = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
+    # Load the workbooks
+    source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
+    source_wb_formulas = load_workbook(f'{source_folder}/{detail_sheet}', data_only=False)
     destination_wb = load_workbook(destination_file, data_only=False)
 
-    # iterate through the tabs
     for sheet in SHEETS:
-        source_ws = source_wb[sheet]
+        source_ws_values = source_wb_values[sheet]
+        source_ws_formulas = source_wb_formulas[sheet]
         dest_ws = destination_wb[sheet]
-        # copy in data for sheet
-        copy_cols(source_ws, dest_ws, SHEETS[sheet]['cols'], 
-                  source_row_start = SHEETS[sheet]['start_row'])
-        print(f'copied {detail_sheet} {sheet}')
+        config = SHEETS[sheet]
+        
+        # Determine the starting row in the destination sheet for pasting data
+        dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
+        
+        # Copy value columns
+        copy_cols(source_ws_values, dest_ws, config['value_cols'], 
+                  source_row_start=config['start_row'], 
+                  destination_row_start=dest_start_row)
+        
+        # Copy formula columns
+        copy_cols(source_ws_formulas, dest_ws, config['formula_cols'], 
+                  source_row_start=config['start_row'], 
+                  destination_row_start=dest_start_row)
+        
+        print(f'Copied {sheet} data from {detail_sheet}.')
 
-
-    # Save the destination workbook
-    destination_wb.save(dest_file)
+    destination_wb.save(destination_file)
 
 #================== Program on run ============================================
 
@@ -66,10 +81,7 @@ def main():
         # only attempt on excel sheets (exlude folder, etc)
         if '.xlsx' not in detail_sheet:
             continue
-        # try: 
         move_data(detail_sheet, dest_file)
-        # except:
-            # print(f'failed to copy data from {detail_sheet}')
 
 
 if __name__ == '__main__':

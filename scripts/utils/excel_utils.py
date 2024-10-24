@@ -73,12 +73,13 @@ def last_data_row(sheet, n_header_rows):
     for row in range(n_header_rows+1, sheet.max_row):
         dept = sheet.cell(row=row, column=1).value
         if (not dept) or (dept == '-'):
-            return row
+            return row - 1
     return sheet.max_row
 
 # function to copy given columns 
 def copy_cols(source_ws, destination_ws, columns_to_move, 
-              column_destinations = None, destination_row_start=None, source_row_start=None):
+              column_destinations = None, destination_row_start=None, 
+              source_row_start=None, keep_style=False):
     """
     Copy columns one worksheet to another
 
@@ -108,4 +109,4 @@ def copy_cols(source_ws, destination_ws, columns_to_move,
             source_cell = source_ws.cell(row = row, column = col + 1)
             dest_cell = destination_ws.cell(row = destination_row_start + (row - source_row_start), 
                                             column = col + 1)
-            copy_cell(source_cell, dest_cell, keep_dest_style=False)
+            copy_cell(source_cell, dest_cell, keep_dest_style=keep_style)

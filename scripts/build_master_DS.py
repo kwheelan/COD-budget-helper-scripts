@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 import os
 import shutil
 # import custom functions
-from utils.excel_utils import copy_cols, last_data_row
+from utils.excel_utils import copy_cols, last_data_row, adjust_formula
 
 # ===================== Constants ===============================
 
@@ -86,3 +86,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+    #res = adjust_formula("=IF($N18="",0,XLOOKUP($N18,'FY26 Gold Book'!$A:$A,'FY26 Gold Book'!$H:$H,0,0,1))", row_offset=10)
+    #print(res)

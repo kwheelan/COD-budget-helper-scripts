@@ -7,6 +7,7 @@ Utility functions for handling Excel sheets
 """
 
 from copy import copy
+import re
 
 # default exports
 __all__ = ['copy_cell', 'copy_cols']
@@ -14,10 +15,19 @@ __all__ = ['copy_cell', 'copy_cols']
 #----------------------- Functions -----------------------
 
 def copy_cell(src_cell, dest_cell, 
-              keep_dest_style = True):
+              keep_dest_style = True,
+              row_offset = 0):
     """
     Function to copy cell and optionally its style """
-    dest_cell.value = src_cell.value
+
+    if (row_offset):
+        # adjust formula to correct row
+        dest_cell.value = adjust_formula( src_cell.value, row_offset)
+    else:
+        # otherwise, just copy directly
+        dest_cell.value = src_cell.value
+
+    # copy over original style if desired
     if (not keep_dest_style) and src_cell.has_style:
         dest_cell.font = copy(src_cell.font)
         dest_cell.border = copy(src_cell.border)
@@ -44,30 +54,33 @@ def col_to_letter(n):
         return chr(n + 65)
     return col_to_letter( (n // 26) - 1) + col_to_letter(n % 26)
 
-# def empty_row(sheet, row):
-#     for col_ix in range(1, sheet.max_column):
-#         value = sheet.cell(row=row, column=col_ix).value
-#         if(value not in (None, 0, '', '-', '---', '$ -')):
-#             return False
+def adjust_formula(formula, row_offset=0):
+    if not isinstance(formula, str) or not formula.startswith('='):
+        return formula
+    
+    # Regex to match cell references, ensuring optional sheet names are correct
+    cell_ref_pattern = re.compile(r"""
+        (
+            (?:'[^']+'!)?     # Optional sheet name in single quotes, followed by '!'
+            \$?[A-Z]+         # Column reference, optionally with $
+            \$?(\d+)          # Row reference, capturing the row number
+        )
+    """, re.VERBOSE)
 
-# def next_open_row(sheet):
-#     """
-#     This function finds the first completely empty row and ensures that the next row is 
-#     also empty in the given sheet.
-#     :param sheet: An openpyxl worksheet object.
-#     :return: The row number of the first completely empty row.
-#     """ 
-#     max_row = sheet.max_row
+    def adjust_cell(match):
+        full_match = match.group(0)  # Full match of the cell reference
+        col = match.group(1) # column
+        row = match.group(2)  # The row number part
 
-#     for row_index in range(1, max_row + 1):
-#         current_row_empty = empty_row(sheet, row_index)
+        # Adjust the row number only if it is not an absolute reference
+        if not full_match.endswith('$') and 'FY' not in col:
+            new_row = str(int(row) + row_offset)
+            return full_match.replace(row, new_row)
+        return full_match
 
-#         next_row_empty = (row_index == max_row) or empty_row(sheet, row_index+1)
-        
-#         if current_row_empty and next_row_empty:
-#             return row_index
-
-#     return max_row + 1
+    # Apply adjustments to the formula
+    adjusted_formula = cell_ref_pattern.sub(adjust_cell, formula)
+    return adjusted_formula
 
 def last_data_row(sheet, n_header_rows):
     for row in range(n_header_rows+1, sheet.max_row):
@@ -76,12 +89,11 @@ def last_data_row(sheet, n_header_rows):
             return row - 1
     return sheet.max_row
 
-# function to copy given columns 
 def copy_cols(source_ws, destination_ws, columns_to_move, 
               column_destinations = None, destination_row_start=None, 
               source_row_start=None, keep_style=False):
     """
-    Copy columns one worksheet to another
+    Copy columns from one worksheet to another
 
     Returns:
         None
@@ -96,17 +108,23 @@ def copy_cols(source_ws, destination_ws, columns_to_move,
     if not destination_row_start:
         destination_row_start = last_data_row(destination_ws, source_row_start)+1
 
-    # convert columns if necessary
+    # convert columns to numbers from letters if necessary
     if (type(columns_to_move[0]) is str):
         columns_to_move = [letter_to_col(l) for l in columns_to_move]
     if (type(column_destinations[0]) is str):
         column_destinations =  [letter_to_col(l) for l in column_destinations]
 
+    # Figure out the end of the range of data to copy
     last_row_to_copy = last_data_row(source_ws, source_row_start)
+    # The adjustment factor from the source row to the destination row
+    row_offset = destination_row_start - source_row_start
 
+    # Actually copy over the data cell by cell
     for col in columns_to_move:
         for row in range(source_row_start, last_row_to_copy):
             source_cell = source_ws.cell(row = row, column = col + 1)
-            dest_cell = destination_ws.cell(row = destination_row_start + (row - source_row_start), 
+            dest_cell = destination_ws.cell(row = row + row_offset, 
                                             column = col + 1)
-            copy_cell(source_cell, dest_cell, keep_dest_style=keep_style)
+            copy_cell(source_cell, dest_cell, keep_dest_style=keep_style, row_offset=row_offset)
+
+

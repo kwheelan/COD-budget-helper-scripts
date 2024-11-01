@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 import os
 import shutil
 # import custom functions
-from utils.excel_utils import copy_cols, last_data_row, adjust_formula
+from utils.excel_utils import copy_cols, last_data_row
 
 # ===================== Constants ===============================
 

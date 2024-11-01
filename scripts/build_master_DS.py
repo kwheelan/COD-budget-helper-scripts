@@ -18,6 +18,7 @@ DATA = 'input_data'
 OUTPUT = 'output'
 template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
 source_folder = f'{DATA}/detail_sheets'
+# source_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets/Clean Sheets (pre-send)'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 
 # Sheet name, columns to copy, start row
@@ -56,16 +57,19 @@ def move_data(detail_sheet, destination_file):
         
         # Determine the starting row in the destination sheet for pasting data
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
+        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row'])
         
         # Copy value columns
         copy_cols(source_ws_values, dest_ws, config['value_cols'], 
                   source_row_start=config['start_row'], 
-                  destination_row_start=dest_start_row)
+                  destination_row_start=dest_start_row, 
+                  source_row_end=source_row_end)
         
         # Copy formula columns
         copy_cols(source_ws_formulas, dest_ws, config['formula_cols'], 
                   source_row_start=config['start_row'], 
-                  destination_row_start=dest_start_row)
+                  destination_row_start=dest_start_row,
+                  source_row_end=source_row_end)
         
         print(f'Copied {sheet} data from {detail_sheet}.')
 
@@ -86,5 +90,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #res = adjust_formula("=IF($N18="",0,XLOOKUP($N18,'FY26 Gold Book'!$A:$A,'FY26 Gold Book'!$H:$H,0,0,1))", row_offset=10)
-    #print(res)

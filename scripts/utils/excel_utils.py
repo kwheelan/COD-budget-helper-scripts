@@ -20,12 +20,10 @@ def copy_cell(src_cell, dest_cell,
     """
     Function to copy cell and optionally its style """
 
-    if (row_offset):
-        # adjust formula to correct row
-        dest_cell.value = adjust_formula( src_cell.value, row_offset)
-    else:
-        # otherwise, just copy directly
-        dest_cell.value = src_cell.value
+    # adjust formula to correct row
+    dest_cell.value = adjust_formula( src_cell.value, row_offset)
+    if ('MIN' in str(src_cell.value)):
+        print( dest_cell.value )
 
     # copy over original style if desired
     if (not keep_dest_style) and src_cell.has_style:
@@ -58,6 +56,9 @@ def adjust_formula(formula, row_offset=0):
     if not isinstance(formula, str) or not formula.startswith('='):
         return formula
     
+    # Remove external workbook references by removing anything inside square brackets
+    formula = re.sub(r'\[.*\]', '', formula)
+
     # Regex to match cell references, ensuring optional sheet names are correct
     cell_ref_pattern = re.compile(r"""
         (
@@ -91,7 +92,7 @@ def last_data_row(sheet, n_header_rows):
 
 def copy_cols(source_ws, destination_ws, columns_to_move, 
               column_destinations = None, destination_row_start=None, 
-              source_row_start=None, keep_style=False):
+              source_row_start=None, keep_style=False, source_row_end = None):
     """
     Copy columns from one worksheet to another
 
@@ -115,13 +116,14 @@ def copy_cols(source_ws, destination_ws, columns_to_move,
         column_destinations =  [letter_to_col(l) for l in column_destinations]
 
     # Figure out the end of the range of data to copy
-    last_row_to_copy = last_data_row(source_ws, source_row_start)
+    if not source_row_end:
+        source_row_end = last_data_row(source_ws, source_row_start)
     # The adjustment factor from the source row to the destination row
     row_offset = destination_row_start - source_row_start
 
     # Actually copy over the data cell by cell
     for col in columns_to_move:
-        for row in range(source_row_start, last_row_to_copy):
+        for row in range(source_row_start, source_row_end):
             source_cell = source_ws.cell(row = row, column = col + 1)
             dest_cell = destination_ws.cell(row = row + row_offset, 
                                             column = col + 1)

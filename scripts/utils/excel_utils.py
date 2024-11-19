@@ -22,8 +22,6 @@ def copy_cell(src_cell, dest_cell,
 
     # adjust formula to correct row
     dest_cell.value = adjust_formula( src_cell.value, row_offset)
-    if ('MIN' in str(src_cell.value)):
-        print( dest_cell.value )
 
     # copy over original style if desired
     if (not keep_dest_style) and src_cell.has_style:

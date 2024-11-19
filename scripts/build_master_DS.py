@@ -24,20 +24,20 @@ dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 # Sheet name, columns to copy, start row
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
-        'value_cols' : list('ABCDEFGHIJLMNPQRSTUVZ') + ['AE', 'AH'],
-        'formula_cols' : list('KOWXY') + ['AA', 'AB', 'AC', 'AD', 'AF', 'AG'],
+        'value_cols' : list('ABCDGILMNPQRSTUVZ') + ['AE', 'AH'],
+        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AC', 'AD', 'AF', 'AG'],
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
-        'value_cols' : list('ABCDEFGHIJKLNOPQRX'),
-        'formula_cols' : list('MSTUVW'),
+        'value_cols' : list('ABCDGIKNOPQRX'),
+        'formula_cols' : list('EFHJLMSTUVW'),
         'start_row' : 15 },
     'Non-Personnel' : {
-        'value_cols': list('ABCDEFGHIJKLMOPQRSTUVWXYZ'),
-        'formula_cols' : 'N',
+        'value_cols': list('ABCDGIKOPQRSTUVWXYZ'),
+        'formula_cols' : 'EFHJLMN',
         'start_row' : 19 },
     'Revenue' : {
-        'value_cols': list('ABCDEFGHIJKLMNPQRSTUVW'),
-        'formula_cols' : 'O',
+        'value_cols': list('ABCDGIKPQRSTUVW'),
+        'formula_cols' : 'EFHJLMNO',
         'start_row' : 15 }
 }
 
@@ -75,17 +75,76 @@ def move_data(detail_sheet, destination_file):
 
     destination_wb.save(destination_file)
 
+def create_summary(destination_file):
+
+    fund_col = 'D'
+    approp_col = 'G'
+
+    # load workbook
+    destination_wb = load_workbook(destination_file, data_only=True)
+    # placeholder for funds
+    funds = {}
+
+    # go through each sheet and collect all unique funds
+    for sheet in SHEETS:
+        fund_data = destination_wb[sheet][fund_col]
+        approp_data = destination_wb[sheet][approp_col]
+        # start serach after header
+        for i in range(SHEETS[sheet]['start_row'], len(fund_data)):
+            fund = fund_data[i].value
+            approp = approp_data[i].value
+            if fund and (fund not in funds):
+                funds[fund] = []
+            if approp and (approp not in funds[fund]) and str(approp) not in funds[fund]:
+                funds[fund].append(approp)
+
+    # Transform the dictionary into a 2-column list
+    rows = []
+    for key, values in funds.items():
+        for value in values:
+            rows.append([key, value])
+        rows.append([key, 'Total'])
+
+    # Copy to the summary tab
+    summary = destination_wb['Summary']
+
+    # Write the transformed data to the sheet
+    for i in range(len(rows)):
+        summary.append(rows[i])
+        fund_cell = summary.cell(row=i+1, column=1)
+        approp_cell = summary.cell(row=i+1, column=2)
+        baseline_formula_cell  = summary.cell(row=i+3, column=3)
+        supplemental_formula_cell = summary.cell(row=i+3, column=4)
+        total_formula_cell = summary.cell(row=i+3, column=5)
+
+        # Creating the SUMIFS formulas
+        if approp_cell.value == 'Total':
+            baseline_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Baseline", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate})'
+            supplemental_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Supplemental", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate})'
+        else:
+            baseline_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Baseline", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate}, \'FTE, Salary-Wage, & Benefits\'!$G:$G, {approp_cell.coordinate})'
+            supplemental_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Supplemental", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate}, \'FTE, Salary-Wage, & Benefits\'!$G:$G, {approp_cell.coordinate})'
+        
+        baseline_formula_cell.value = baseline_formula
+        supplemental_formula_cell.value = supplemental_formula
+        total_formula_cell.value = f'={baseline_formula_cell.coordinate} + {supplemental_formula_cell.coordinate}'
+
+    # Save the workbook
+    destination_wb.save(filename=destination_file)
+
+
 #================== Program on run ============================================
 
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder)[0:2]:
+    for detail_sheet in os.listdir(source_folder)[0:3]:
 
         # only attempt on excel sheets (exlude folder, etc)
         if '.xlsx' not in detail_sheet:
             continue
         move_data(detail_sheet, dest_file)
+    create_summary(dest_file)
 
 
 if __name__ == '__main__':

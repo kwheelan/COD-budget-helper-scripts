@@ -17,7 +17,7 @@ from utils.excel_utils import copy_cols, last_data_row
 DATA = 'input_data'
 OUTPUT = 'output'
 template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
-source_folder = f'{DATA}/detail_sheets'
+source_folder = f'{DATA}/detail_sheets_analyst_review'
 # source_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets/Clean Sheets (pre-send)'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 
@@ -57,7 +57,7 @@ def move_data(detail_sheet, destination_file):
         
         # Determine the starting row in the destination sheet for pasting data
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
-        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row'])
+        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row']) + 1
         
         # Copy value columns
         copy_cols(source_ws_values, dest_ws, config['value_cols'], 
@@ -138,7 +138,7 @@ def create_summary(destination_file):
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder)[0:3]:
+    for detail_sheet in os.listdir(source_folder):
 
         # only attempt on excel sheets (exlude folder, etc)
         if '.xlsx' not in detail_sheet:

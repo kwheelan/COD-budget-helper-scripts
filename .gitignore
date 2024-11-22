@@ -6,3 +6,8 @@
 
 # ignore venv
 venv/
+COD/
+
+# ignore all data
+input_data/
+output/

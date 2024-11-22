@@ -13,6 +13,7 @@ OUTPUT = 'output'
 source_folder = f'{DATA}/detail_sheets'
 # master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
+output_file = f'{OUTPUT}/obj_level.xlsx'
 
 
 # columns to be retained from all sheets
@@ -85,62 +86,53 @@ class FringeLookup:
         self.process_fringe_lookup()
 
     def convert_to_long_format(self, df):
-        # Identify id_vars and value_vars for melting
         id_vars = ['Fringe_Package']
         value_vars = [col for col in df.columns if col != 'Fringe_Package']
         
-        # Use pd.melt to go from wide to long format
         df_long = pd.melt(df, id_vars=id_vars, value_vars=value_vars, 
-                        var_name='Type', value_name='Value')
+                         var_name='Type', value_name='Value')
         
-        # Extract the type and variable (object/rate) from the Type column
         df_long[['Type_Name', 'Variable']] = df_long['Type'].str.rsplit('_', n=1, expand=True)
         
-        # Pivot the DataFrame so that object and rate are columns again
         df_long = df_long.pivot_table(index=['Fringe_Package', 'Type_Name'], 
-                                    columns='Variable', values='Value', 
-                                    aggfunc='first').reset_index()
+                                     columns='Variable', values='Value', 
+                                     aggfunc='first').reset_index()
         
-        # Rename columns for clarity
-        df_long.columns.name = None  # Remove the name of the columns axis
+        df_long.columns.name = None
         df_long = df_long.rename(columns={'object': 'Object_Number', 'rate': 'Rate'})
+        df_long['Object_Number'] = df_long['Object_Number'].astype(str)
 
         return df_long
 
     def process_fringe_lookup(self):
         self.df = self.df.iloc[:, 1:22]
 
-        # Define the new column names based on the original ones
         original_columns = self.df.columns.tolist()
         new_columns = ['Fringe_Package']
         
         for i in range(1, len(original_columns), 2):
-            base_name = original_columns[i].replace("\n", " ").replace("  ", " ").strip() 
+            base_name = original_columns[i].replace("\n", " ").replace("  ", " ").strip()
             if pd.isna(base_name):
                 base_name = original_columns[i-2]
             object_col = f'{base_name.strip()}_object'
             rate_col = f'{base_name.strip()}_rate'
             new_columns.extend([object_col, rate_col])
         
-        # Rename the columns
         self.df.columns = new_columns
-
-        # drop first row
         self.df = self.df.iloc[1:].reset_index(drop=True)
-
-        # convert to long
         self.df = self.convert_to_long_format(self.df)
 
     def lookup_fringe(self, package, obj):
         df = self.df
-        rate = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == obj), 'Rate']
+        lookup_result = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == str(obj))]
+        rate = lookup_result['Rate']
         if not rate.empty:
-            return int(rate.iloc[0])  # Ensure it returns an integer value
-        return 0
+            return float(rate.iloc[0])  # Ensure it returns a float value
+        return 0.0
 
     def obj_list(self):
         return self.df['Object_Number'].unique()
-    
+
     def __repr__(self):
         return repr(self.df)
 
@@ -168,13 +160,21 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # process personnel
     if sheet_name == 'FTE, Salary-Wage, & Benefits':
         df = process_personnel(df, fringe_lookup)
-        print(df)
 
-    # ID column
-    df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
-                               #'Object',
-                              'Recurring or One-Time', 'Baseline or Supplemental'])
-    return df
+    # process OT
+    # # TODO fix with FICA objects
+    # if sheet_name == 'Overtime & Other Personnel':
+    #     df.rename(columns={'OT/SP/Hol Object' :'Object'})
+
+    # # ID column
+    # df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
+    #                            'Object',
+    #                           'Recurring or One-Time', 'Baseline or Supplemental'])
+    
+    # # Group by the ID column and sum the "Amount" values
+    # grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+
+    # return grouped_df
 
 #================= Process personnel ========================================
 
@@ -188,11 +188,25 @@ def process_personnel(df, fringe_lookup):
             new_row['Object'] = obj
             rate = fringe_lookup.lookup_fringe(new_row['Fringe Benefits Package'], obj)
             new_row['Fringe Rate'] = rate
-            new_row['Fringe Request'] = rate * new_row['Salary/Wage Total Request (incl. GWI & Merit)']
+            new_row['Amount'] = rate * new_row['Salary/Wage Total Request (incl. GWI & Merit)']
             expanded_rows.append(new_row)
     
     expanded_df = pd.DataFrame(expanded_rows)
-    return expanded_df
+
+    # delete emty rows
+    expanded_df = expanded_df[expanded_df['Amount'] > 0]
+
+    # ID column
+    df = create_id_column(expanded_df, ['Fund', 'Appropriation', 'Cost Center', 
+                               'Object',
+                              'Recurring or One-Time', 'Baseline or Supplemental'])
+    
+    # Group by the ID column and sum the "Amount" values
+    #df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+
+    df.to_excel(output_file, index=False)
+
+    return df
 
 # ==================== Main ==========================================
 
@@ -200,6 +214,9 @@ def main():
     dfs, lookup_df = read_master_detail(master_DS_filepath)
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
+
+    # print(fringeLookup.lookup_fringe('General City Civilian', 603125))
+
     # process all the dataframes
     for df_key in dfs:
         df_processed = process_sheet(dfs, df_key, fringeLookup)

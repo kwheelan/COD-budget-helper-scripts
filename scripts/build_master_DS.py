@@ -80,8 +80,8 @@ def create_summary(destination_file):
     fund_col = 'D'
     approp_col = 'G'
 
-    # load workbook
-    destination_wb = load_workbook(destination_file, data_only=True)
+    # load workbook and formulas
+    destination_wb = load_workbook(destination_file, data_only=False)
     # placeholder for funds
     funds = {}
 

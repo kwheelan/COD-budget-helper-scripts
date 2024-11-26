@@ -32,7 +32,6 @@ def copy_cell(src_cell, dest_cell,
         dest_cell.protection = copy(src_cell.protection)
         dest_cell.alignment = copy(src_cell.alignment)
 
-
 def letter_to_col(str):
     """
     Convert Excel column name (ex. AA or G) to column number (0-based)
@@ -79,6 +78,7 @@ def adjust_formula(formula, row_offset=0):
 
     # Apply adjustments to the formula
     adjusted_formula = cell_ref_pattern.sub(adjust_cell, formula)
+    # adjusted_formula = adjusted_formula.replace('_xlfn.', '')
     return adjusted_formula
 
 def last_data_row(sheet, n_header_rows):

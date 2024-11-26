@@ -149,24 +149,30 @@ def create_summary(destination_file):
                 return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate})'
             return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate}, \'{tab}\'!$G:$G, {approp_cell.coordinate})'
 
+    header_rows = 2
     # Write the transformed data to the sheet
-    for row in range(len(rows)):
+    for row_ix in range(len(rows)):
+        active_row = row_ix+(header_rows+1)
         # for each row (ie. fund/approp combo)
-        summary.append(rows[row])
-        fund_cell = summary.cell(row=row+1, column=1)
-        approp_cell = summary.cell(row=row+1, column=2)
+        fund_cell = summary.cell(row=active_row, column=1)
+        approp_cell = summary.cell(row=active_row, column=2)
+        fund_cell.value, approp_cell.value = rows[row_ix]
 
         # for each section: FTE, Salary and Benefits, NP, OT, Revenue
         for section_ix in range(len(SUMMARY_SECTIONS)):
             # get section name
             section = list(SUMMARY_SECTIONS.keys())[section_ix]
             # fetch cell locations and fill with formulas
-            baseline_cell  = summary.cell(row=row+3, column=3+(section_ix*3))
+            baseline_cell  = summary.cell(row=active_row, column=3+(section_ix*3))
             baseline_cell.value = summary_formula(section, 'Baseline', fund_cell, approp_cell)
-            supplemental_cell = summary.cell(row=row+3, column=4+(section_ix*3))
+            supplemental_cell = summary.cell(row=active_row, column=4+(section_ix*3))
             supplemental_cell.value = summary_formula(section, 'Supplemental', fund_cell, approp_cell)
-            total_cell = summary.cell(row=row+3, column=5+(section_ix*3))
+            total_cell = summary.cell(row=active_row, column=5+(section_ix*3))
             total_cell.value = f'={baseline_cell.coordinate} + {supplemental_cell.coordinate}'
+
+        # add total column to sum all subtotals
+        total_col_cell = summary.cell(row=active_row, column=18)
+        total_col_cell = f'=SUM(E{active_row}, H{active_row}), K{active_row}, N{active_row}, Q{active_row}'
 
     # Save the workbook
     destination_wb.save(filename=destination_file)

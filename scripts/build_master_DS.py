@@ -6,6 +6,7 @@ Iterate through each file in detail_sheets,
 """
 
 from openpyxl import load_workbook
+from openpyxl.styles import numbers
 import os
 import shutil
 # import custom functions
@@ -172,7 +173,12 @@ def create_summary(destination_file):
 
         # add total column to sum all subtotals
         total_col_cell = summary.cell(row=active_row, column=18)
-        total_col_cell = f'=SUM(E{active_row}, H{active_row}), K{active_row}, N{active_row}, Q{active_row}'
+        total_col_cell.value = f'=SUM(E{active_row}, H{active_row}, K{active_row}, N{active_row}, Q{active_row})'
+
+        # format as USD
+        for col in range(6,19):
+            cell = summary.cell(row=active_row, column=col)
+            cell.number_format = numbers.FORMAT_CURRENCY_USD_SIMPLE
 
     # Save the workbook
     destination_wb.save(filename=destination_file)

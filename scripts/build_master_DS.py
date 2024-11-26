@@ -6,7 +6,7 @@ Iterate through each file in detail_sheets,
 """
 
 from openpyxl import load_workbook
-from openpyxl.styles import numbers
+from openpyxl.styles import Font
 import os
 import shutil
 # import custom functions
@@ -138,17 +138,17 @@ def create_summary(destination_file):
     summary = destination_wb['Summary']
 
     def summary_formula(section, baseOrSupp, fund_cell, approp_cell):
-            """ Creating the SUMIFS formulas for summary tab """
-            # get sheet for relevant data
-            tab = SUMMARY_SECTIONS[section]['tab']
-            # column to aggregate in that sheet
-            col = SUMMARY_SECTIONS[section]['count_col']
-            # baseline/supplemental column
-            b_s_col = SUMMARY_SECTIONS[section]['baseline_col']
-            
-            if approp_cell.value == 'Total':
-                return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate})'
-            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate}, \'{tab}\'!$G:$G, {approp_cell.coordinate})'
+        """ Creating the SUMIFS formulas for summary tab """
+        # get sheet for relevant data
+        tab = SUMMARY_SECTIONS[section]['tab']
+        # column to aggregate in that sheet
+        col = SUMMARY_SECTIONS[section]['count_col']
+        # baseline/supplemental column
+        b_s_col = SUMMARY_SECTIONS[section]['baseline_col']
+        
+        if approp_cell.value == 'Total':
+            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate})'
+        return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate}, \'{tab}\'!$G:$G, {approp_cell.coordinate})'
 
     header_rows = 2
     # Write the transformed data to the sheet
@@ -173,12 +173,18 @@ def create_summary(destination_file):
 
         # add total column to sum all subtotals
         total_col_cell = summary.cell(row=active_row, column=18)
-        total_col_cell.value = f'=SUM(E{active_row}, H{active_row}, K{active_row}, N{active_row}, Q{active_row})'
+        total_col_cell.value = f'=SUM(H{active_row}, K{active_row}, N{active_row})'
 
         # format as USD
         for col in range(6,19):
             cell = summary.cell(row=active_row, column=col)
-            cell.number_format = numbers.FORMAT_CURRENCY_USD_SIMPLE
+            cell.number_format = cell.number_format = '"$"#,##0' 
+
+        # bold row if total row
+        if approp_cell.value == 'Total':
+            for col in range(1, 19):
+                cell = summary.cell(row=active_row, column=col)
+                cell.font = Font(bold=True)
 
     # Save the workbook
     destination_wb.save(filename=destination_file)

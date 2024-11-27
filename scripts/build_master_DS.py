@@ -26,7 +26,7 @@ dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
         'value_cols' : list('ABCDGILMNPQRSTUVZ') + ['AE', 'AH'],
-        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AC', 'AD', 'AF', 'AG'],
+        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AD', 'AF', 'AG', 'AC'],
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
         'value_cols' : list('ABCDGIKNOPQRX'),
@@ -72,6 +72,7 @@ SUMMARY_SECTIONS = {
 
 # ================== Script functions ===================================
 
+
 def move_data(detail_sheet, destination_file):
     # Load the workbooks
     source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
@@ -83,7 +84,15 @@ def move_data(detail_sheet, destination_file):
         source_ws_formulas = source_wb_formulas[sheet]
         dest_ws = destination_wb[sheet]
         config = SHEETS[sheet]
-        
+
+        # def unfilter_table(sheet):
+        #     tables = sheet.tables.values()
+        #     for table in tables:
+        #         if table.autoFilter:
+        #             table.autoFilter.ref = None  # Remove any existing filter
+        # unfilter_table(source_ws_values)
+        # unfilter_table(source_ws_formulas)
+
         # Determine the starting row in the destination sheet for pasting data
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
         source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row']) + 1

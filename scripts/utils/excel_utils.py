@@ -8,6 +8,7 @@ Utility functions for handling Excel sheets
 
 from copy import copy
 import re
+from openpyxl import worksheet
 
 # default exports
 __all__ = ['copy_cell', 'copy_cols']
@@ -125,6 +126,8 @@ def copy_cols(source_ws, destination_ws, columns_to_move,
             source_cell = source_ws.cell(row = row, column = col + 1)
             dest_cell = destination_ws.cell(row = row + row_offset, 
                                             column = col + 1)
+            if isinstance(source_cell.value, worksheet.formula.ArrayFormula):
+                source_cell.value = source_cell.value.text
             copy_cell(source_cell, dest_cell, keep_dest_style=keep_style, row_offset=row_offset)
 
 

@@ -8,6 +8,7 @@ Utility functions for handling Excel sheets
 
 from copy import copy
 import re
+from openpyxl import worksheet
 
 # default exports
 __all__ = ['copy_cell', 'copy_cols']
@@ -31,7 +32,6 @@ def copy_cell(src_cell, dest_cell,
         dest_cell.number_format = src_cell.number_format
         dest_cell.protection = copy(src_cell.protection)
         dest_cell.alignment = copy(src_cell.alignment)
-
 
 def letter_to_col(str):
     """
@@ -79,6 +79,7 @@ def adjust_formula(formula, row_offset=0):
 
     # Apply adjustments to the formula
     adjusted_formula = cell_ref_pattern.sub(adjust_cell, formula)
+    # adjusted_formula = adjusted_formula.replace('_xlfn.', '')
     return adjusted_formula
 
 def last_data_row(sheet, n_header_rows):
@@ -125,6 +126,8 @@ def copy_cols(source_ws, destination_ws, columns_to_move,
             source_cell = source_ws.cell(row = row, column = col + 1)
             dest_cell = destination_ws.cell(row = row + row_offset, 
                                             column = col + 1)
+            if isinstance(source_cell.value, worksheet.formula.ArrayFormula):
+                source_cell.value = source_cell.value.text
             copy_cell(source_cell, dest_cell, keep_dest_style=keep_style, row_offset=row_offset)
 
 

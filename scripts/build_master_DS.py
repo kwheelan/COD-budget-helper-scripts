@@ -6,6 +6,7 @@ Iterate through each file in detail_sheets,
 """
 
 from openpyxl import load_workbook
+from openpyxl.styles import Font
 import os
 import shutil
 # import custom functions
@@ -17,7 +18,7 @@ from utils.excel_utils import copy_cols, last_data_row
 DATA = 'input_data'
 OUTPUT = 'output'
 template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
-source_folder = f'{DATA}/detail_sheets'
+source_folder = f'{DATA}/detail_sheets_analyst_review'
 # source_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets/Clean Sheets (pre-send)'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 
@@ -25,7 +26,7 @@ dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
         'value_cols' : list('ABCDGILMNPQRSTUVZ') + ['AE', 'AH'],
-        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AC', 'AD', 'AF', 'AG'],
+        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AD', 'AF', 'AG', 'AC'],
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
         'value_cols' : list('ABCDGIKNOPQRX'),
@@ -41,7 +42,36 @@ SHEETS = {
         'start_row' : 15 }
 }
 
+# Dictionary to help with summary tab
+SUMMARY_SECTIONS = {
+    'FTE' : {
+        'tab' : 'FTE, Salary-Wage, & Benefits',
+        'count_col' : 'U',
+        'baseline_col' : 'L'
+    }, 
+    'Salary & Benefits' : {
+        'tab' : 'FTE, Salary-Wage, & Benefits',
+        'count_col': 'AG',
+        'baseline_col' : 'L'
+    }, 
+    'Non-Personnel' : {
+        'tab' : 'Non-Personnel',
+        'count_col': 'Y',
+        'baseline_col' : 'O'
+    }, 
+    'Overtime' : {
+        'tab' : 'Overtime & Other Personnel',
+        'count_col': 'W',
+        'baseline_col' : 'N'
+    }, 
+    'Revenue' : {
+        'tab' : 'Revenue',
+        'count_col': 'V',
+        'baseline_col' : 'P'
+    }}
+
 # ================== Script functions ===================================
+
 
 def move_data(detail_sheet, destination_file):
     # Load the workbooks
@@ -54,10 +84,18 @@ def move_data(detail_sheet, destination_file):
         source_ws_formulas = source_wb_formulas[sheet]
         dest_ws = destination_wb[sheet]
         config = SHEETS[sheet]
-        
+
+        # def unfilter_table(sheet):
+        #     tables = sheet.tables.values()
+        #     for table in tables:
+        #         if table.autoFilter:
+        #             table.autoFilter.ref = None  # Remove any existing filter
+        # unfilter_table(source_ws_values)
+        # unfilter_table(source_ws_formulas)
+
         # Determine the starting row in the destination sheet for pasting data
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
-        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row'])
+        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row']) + 1
         
         # Copy value columns
         copy_cols(source_ws_values, dest_ws, config['value_cols'], 
@@ -80,8 +118,8 @@ def create_summary(destination_file):
     fund_col = 'D'
     approp_col = 'G'
 
-    # load workbook
-    destination_wb = load_workbook(destination_file, data_only=True)
+    # load workbook and formulas
+    destination_wb = load_workbook(destination_file, data_only=False)
     # placeholder for funds
     funds = {}
 
@@ -108,26 +146,54 @@ def create_summary(destination_file):
     # Copy to the summary tab
     summary = destination_wb['Summary']
 
-    # Write the transformed data to the sheet
-    for i in range(len(rows)):
-        summary.append(rows[i])
-        fund_cell = summary.cell(row=i+1, column=1)
-        approp_cell = summary.cell(row=i+1, column=2)
-        baseline_formula_cell  = summary.cell(row=i+3, column=3)
-        supplemental_formula_cell = summary.cell(row=i+3, column=4)
-        total_formula_cell = summary.cell(row=i+3, column=5)
-
-        # Creating the SUMIFS formulas
-        if approp_cell.value == 'Total':
-            baseline_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Baseline", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate})'
-            supplemental_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Supplemental", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate})'
-        else:
-            baseline_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Baseline", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate}, \'FTE, Salary-Wage, & Benefits\'!$G:$G, {approp_cell.coordinate})'
-            supplemental_formula = f'=SUMIFS(\'FTE, Salary-Wage, & Benefits\'!$U:$U, \'FTE, Salary-Wage, & Benefits\'!$L:$L, "Supplemental", \'FTE, Salary-Wage, & Benefits\'!$D:$D, {fund_cell.coordinate}, \'FTE, Salary-Wage, & Benefits\'!$G:$G, {approp_cell.coordinate})'
+    def summary_formula(section, baseOrSupp, fund_cell, approp_cell):
+        """ Creating the SUMIFS formulas for summary tab """
+        # get sheet for relevant data
+        tab = SUMMARY_SECTIONS[section]['tab']
+        # column to aggregate in that sheet
+        col = SUMMARY_SECTIONS[section]['count_col']
+        # baseline/supplemental column
+        b_s_col = SUMMARY_SECTIONS[section]['baseline_col']
         
-        baseline_formula_cell.value = baseline_formula
-        supplemental_formula_cell.value = supplemental_formula
-        total_formula_cell.value = f'={baseline_formula_cell.coordinate} + {supplemental_formula_cell.coordinate}'
+        if approp_cell.value == 'Total':
+            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate})'
+        return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate}, \'{tab}\'!$G:$G, {approp_cell.coordinate})'
+
+    header_rows = 2
+    # Write the transformed data to the sheet
+    for row_ix in range(len(rows)):
+        active_row = row_ix+(header_rows+1)
+        # for each row (ie. fund/approp combo)
+        fund_cell = summary.cell(row=active_row, column=1)
+        approp_cell = summary.cell(row=active_row, column=2)
+        fund_cell.value, approp_cell.value = rows[row_ix]
+
+        # for each section: FTE, Salary and Benefits, NP, OT, Revenue
+        for section_ix in range(len(SUMMARY_SECTIONS)):
+            # get section name
+            section = list(SUMMARY_SECTIONS.keys())[section_ix]
+            # fetch cell locations and fill with formulas
+            baseline_cell  = summary.cell(row=active_row, column=3+(section_ix*3))
+            baseline_cell.value = summary_formula(section, 'Baseline', fund_cell, approp_cell)
+            supplemental_cell = summary.cell(row=active_row, column=4+(section_ix*3))
+            supplemental_cell.value = summary_formula(section, 'Supplemental', fund_cell, approp_cell)
+            total_cell = summary.cell(row=active_row, column=5+(section_ix*3))
+            total_cell.value = f'={baseline_cell.coordinate} + {supplemental_cell.coordinate}'
+
+        # add total column to sum all subtotals
+        total_col_cell = summary.cell(row=active_row, column=18)
+        total_col_cell.value = f'=SUM(H{active_row}, K{active_row}, N{active_row})'
+
+        # format as USD
+        for col in range(6,19):
+            cell = summary.cell(row=active_row, column=col)
+            cell.number_format = cell.number_format = '"$"#,##0' 
+
+        # bold row if total row
+        if approp_cell.value == 'Total':
+            for col in range(1, 19):
+                cell = summary.cell(row=active_row, column=col)
+                cell.font = Font(bold=True)
 
     # Save the workbook
     destination_wb.save(filename=destination_file)
@@ -138,13 +204,14 @@ def create_summary(destination_file):
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder)[0:3]:
+    for detail_sheet in os.listdir(source_folder):
 
         # only attempt on excel sheets (exlude folder, etc)
         if '.xlsx' not in detail_sheet:
             continue
         move_data(detail_sheet, dest_file)
     create_summary(dest_file)
+    print("Created summary tab")
 
 
 if __name__ == '__main__':

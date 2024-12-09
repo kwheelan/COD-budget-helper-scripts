@@ -34,11 +34,11 @@ SHEETS = {
         'start_row' : 15 },
     'Non-Personnel' : {
         'value_cols': list('ABCDGIKOPQRSTUVWXYZ'),
-        'formula_cols' : 'EFHJLMN',
+        'formula_cols' : list('EFHJLMN'),
         'start_row' : 19 },
     'Revenue' : {
         'value_cols': list('ABCDGIKPQRSTUVW'),
-        'formula_cols' : 'EFHJLMNO',
+        'formula_cols' : list('EFHJLMNO'),
         'start_row' : 15 }
 }
 
@@ -196,7 +196,7 @@ def create_summary(destination_file):
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder):
+    for detail_sheet in os.listdir(source_folder)[0:3]:
 
         # only attempt on excel sheets (exlude folder, etc)
         if '.xlsx' not in detail_sheet:

@@ -54,9 +54,10 @@ REPLACEMENTS = [
     Replacer('FTE, Salary-Wage, & Benefits', 'U', 'AO'),
     Replacer('FTE, Salary-Wage, & Benefits', 'AA', 'AP'),
     Replacer('FTE, Salary-Wage, & Benefits', 'AF', 'AQ'),
-    Replacer('Overtime & Other Personnel', 'R', 'Y'),
-    Replacer('Overtime & Other Personnel', 'V', 'Z'),
-    Replacer('Overtime & Other Personnel', 'W', 'AC'),
+    Replacer('Overtime & Other Personnel', 'R', 'AC'),
+    Replacer('Overtime & Other Personnel', 'V', 'AD'),
+    Replacer('Overtime & Other Personnel', 'W', 'AE'),
+    Replacer('Revenue', 'V', 'Z'),
     Replacer('Non-Personnel', 'Y', 'AC')
 ]
 

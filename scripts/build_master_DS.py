@@ -75,36 +75,28 @@ SUMMARY_SECTIONS = {
 
 def move_data(detail_sheet, destination_file):
     # Load the workbooks
-    source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
+    #source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
     source_wb_formulas = load_workbook(f'{source_folder}/{detail_sheet}', data_only=False)
     destination_wb = load_workbook(destination_file, data_only=False)
 
     for sheet in SHEETS:
-        source_ws_values = source_wb_values[sheet]
+        #source_ws_values = source_wb_values[sheet]
         source_ws_formulas = source_wb_formulas[sheet]
         dest_ws = destination_wb[sheet]
         config = SHEETS[sheet]
 
-        # def unfilter_table(sheet):
-        #     tables = sheet.tables.values()
-        #     for table in tables:
-        #         if table.autoFilter:
-        #             table.autoFilter.ref = None  # Remove any existing filter
-        # unfilter_table(source_ws_values)
-        # unfilter_table(source_ws_formulas)
-
         # Determine the starting row in the destination sheet for pasting data
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
-        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row']) + 1
+        source_row_end = last_data_row(source_ws_formulas, n_header_rows=config['start_row']) + 1
         
-        # Copy value columns
-        copy_cols(source_ws_values, dest_ws, config['value_cols'], 
-                  source_row_start=config['start_row'], 
-                  destination_row_start=dest_start_row, 
-                  source_row_end=source_row_end)
+        # # Copy value columns
+        # copy_cols(source_ws_values, dest_ws, config['value_cols'], 
+        #           source_row_start=config['start_row'], 
+        #           destination_row_start=dest_start_row, 
+        #           source_row_end=source_row_end)
         
         # Copy formula columns
-        copy_cols(source_ws_formulas, dest_ws, config['formula_cols'], 
+        copy_cols(source_ws_formulas, dest_ws, config['formula_cols'] + config['value_cols'], 
                   source_row_start=config['start_row'], 
                   destination_row_start=dest_start_row,
                   source_row_end=source_row_end)

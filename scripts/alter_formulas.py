@@ -6,7 +6,7 @@ A script to change all summary formulas to pull from the approved budget recomme
 
 import re
 import os
-from openpyxl import load_workbook
+from openpyxl import load_workbook, worksheet
 
 #======================================================================
 # Replacer class
@@ -132,8 +132,13 @@ def edit_formulas(file, verbose=False):
         for row in ws.iter_rows():
             for cell in row:
                 if isinstance(cell.value, str) and cell.value.startswith('='): # and 'SUMIFS' in cell.value:
-                    # replace formula
+                    
+                    # store old formula; deal with array formulas
+                    if isinstance(cell.value, worksheet.formula.ArrayFormula):
+                        cell.value = cell.value.text
                     original_formula = cell.value
+
+                    # replace formula
                     new_formula = replace_all(original_formula, police)
                     if original_formula != new_formula:
                         # print optional message

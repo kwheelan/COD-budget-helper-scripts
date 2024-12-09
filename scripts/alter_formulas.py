@@ -143,7 +143,8 @@ def edit_formulas(file, verbose=False):
 
     # save workbook
     name = file.split('\\')[-1]
-    wb.save(f'output/formula_replacements/{name}')
+    #wb.save(f'output/formula_replacements/backups/{name}')
+    wb.save(file)
     print(f'Saved {name}')
 
 #======================================================================

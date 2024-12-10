@@ -6,7 +6,7 @@ Iterate through each file in detail_sheets,
 """
 
 from openpyxl import load_workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 import os
 import shutil
 # import custom functions
@@ -30,13 +30,13 @@ SHEETS = {
         'cols' : col_range('A', 'AT'), # extra column for Police
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
-        'cols' : col_range('A', 'AD'),
+        'cols' : col_range('A', 'AF'),
         'start_row' : 15 },
     'Non-Personnel' : {
         'cols' : col_range('A', 'AE'),
         'start_row' : 19 },
     'Revenue' : {
-        'cols' : col_range('A', 'W'),
+        'cols' : col_range('A', 'AA'),
         'start_row' : 15 }
 }
 
@@ -67,6 +67,9 @@ SUMMARY_SECTIONS = {
         'count_col': 'Z',
         'baseline_col' : 'P'
     }}
+
+# Set the gray fill for background color on Excel cells
+gray_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
 # ================== Script functions ===================================
 
@@ -177,7 +180,9 @@ def create_summary(destination_file):
         if approp_cell.value == 'Total':
             for col in range(1, 19):
                 cell = summary.cell(row=active_row, column=col)
+                # turn row gray with bold
                 cell.font = Font(bold=True)
+                cell.fill = gray_fill
 
     # Save the workbook
     destination_wb.save(filename=destination_file)

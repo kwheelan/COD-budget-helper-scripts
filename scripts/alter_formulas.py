@@ -6,7 +6,9 @@ A script to change all summary formulas to pull from the approved budget recomme
 
 import re
 import os
-from openpyxl import load_workbook, worksheet
+from openpyxl import load_workbook
+from openpyxl.worksheet.formula import ArrayFormula  
+
 
 #======================================================================
 # Replacer class
@@ -23,13 +25,12 @@ class Replacer:
     
     def replace_function(self, formula):
         # Regular expression to match the pattern
-        pattern = rf"('{self.sheet}'!\$){self.old_col}(\$[\d]+)?(:\$)?({self.old_col})?(\$[\d]+)?"
+        pattern = rf"('*{self.sheet}'*!\$){self.old_col}(\$[\d]+)?(:\$)?({self.old_col})?(\$[\d]+)?"
         
         def repl(match):
             sheet_part = match.group(1)
             first_reference_part = match.group(2) or ''
             range_separator = match.group(3) or ''
-            second_col_part = match.group(4) or ''
             second_reference_part = match.group(5) or ''
             
             if range_separator:
@@ -68,6 +69,8 @@ POLICE_REPLACEMENTS[2] = Replacer('FTE, Salary-Wage, & Benefits', 'AB', 'AQ')
 POLICE_REPLACEMENTS[3] = Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR')
 
 SHEETS = ['Dept Summary', 'Initiatives Summary']
+
+SAVE_TO = 'output/formula_replacements/'
 
 #======================================================================
 # Helpers
@@ -118,7 +121,14 @@ def create_file_list(verbose = False):
 
     return DS_list
 
-def edit_formulas(file, verbose=False):
+# def fix_compatibility(formula):
+#     # Use regex to find and remove curly braces around formulas or @
+#     #formula = re.sub(r'{([^{}@]+)}', r'\1', formula)
+#     #formula = formula.replace('_xlfn.', '')
+#     #formula = formula.replace('_xlws.', '')
+#     return formula
+
+def edit_formulas(file, verbose=False, save_to=False):
     # check if it's the police DS
     police = 'Police' in file
 
@@ -132,15 +142,25 @@ def edit_formulas(file, verbose=False):
         # Iterate through all cells in the sheet
         for row in ws.iter_rows():
             for cell in row:
-                if isinstance(cell.value, str) and cell.value.startswith('='): # and 'SUMIFS' in cell.value:
-                    
-                    # store old formula; deal with array formulas
-                    if isinstance(cell.value, worksheet.formula.ArrayFormula):
-                        cell.value = cell.value.text
+
+                # # handle arrays
+                # if isinstance(cell.value, ArrayFormula):
+                #     # Extract the formula text from ArrayFormula object
+                #     text = cell.value.text
+                #     if '=' in text:
+                #         cell.value = fix_compatibility(text)
+                #     else: 
+                #         cell.value = None
+                #     # if "SORT" in cell.value:
+                #     #     print(cell.value)
+
+                if isinstance(cell.value, str) and "=" in cell.value:
+                    # store old formula
                     original_formula = cell.value
 
                     # replace formula
                     new_formula = replace_all(original_formula, police)
+
                     if original_formula != new_formula:
                         # print optional message
                         if verbose:
@@ -149,8 +169,10 @@ def edit_formulas(file, verbose=False):
 
     # save workbook
     name = file.split('\\')[-1]
-    #wb.save(f'output/formula_replacements/backups/{name}')
-    wb.save(file)
+    if save_to:
+        wb.save(f'{SAVE_TO}/{name}')
+    else:
+        wb.save(file)
     print(f'Saved {name}')
 
 #======================================================================

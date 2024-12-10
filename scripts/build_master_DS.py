@@ -18,9 +18,11 @@ from utils.excel_utils import copy_cols, last_data_row
 DATA = 'input_data'
 OUTPUT = 'output'
 template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
-source_folder = f'{DATA}/detail_sheets_analyst_review'
-# source_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets/Clean Sheets (pre-send)'
+#source_folder = f'{DATA}/detail_sheets_analyst_review'
+SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
+
+INCLUDE = ['Airport']
 
 # Sheet name, columns to copy, start row
 SHEETS = {
@@ -76,7 +78,7 @@ SUMMARY_SECTIONS = {
 def move_data(detail_sheet, destination_file):
     # Load the workbooks
     #source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
-    source_wb_formulas = load_workbook(f'{source_folder}/{detail_sheet}', data_only=False)
+    source_wb_formulas = load_workbook(detail_sheet, data_only=False)
     destination_wb = load_workbook(destination_file, data_only=False)
 
     for sheet in SHEETS:
@@ -101,7 +103,8 @@ def move_data(detail_sheet, destination_file):
                   destination_row_start=dest_start_row,
                   source_row_end=source_row_end)
         
-        print(f'Copied {sheet} data from {detail_sheet}.')
+        name = detail_sheet.split('\\')[-1]
+        print(f'Copied {sheet} data from {name}.')
 
     destination_wb.save(destination_file)
 
@@ -190,17 +193,63 @@ def create_summary(destination_file):
     # Save the workbook
     destination_wb.save(filename=destination_file)
 
+# MOVE TO UTILS
+
+def find_DS(folder, verbose = False):
+    # Get full file path
+    folder_fp = os.path.join(SOURCE_FOLDER, folder)
+
+    # grab list of all files in that folder
+    files = os.listdir(folder_fp)
+
+    # generate list of reviewed detail sheets
+    reviewed_DS = []
+    for file in files:
+        if ('(Analyst Review)' in file or 'Library' in file) and '.xlsx' in file:
+            reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
+
+    # return message
+    if len(reviewed_DS) > 1:
+        message = f'Multiple potential reviewed detail sheets: {reviewed_DS}'
+    elif len(reviewed_DS) == 0:
+        message = f'No reviewed detail sheet found in {folder}'
+    if verbose:
+        print(message)
+
+    return reviewed_DS
+
+def create_file_list(verbose = False):
+    # all folders in analyst review section
+    DS_FOLDERS = os.listdir(SOURCE_FOLDER)
+
+    # initialize list and add viable files to it
+    DS_list = []
+    for folder in DS_FOLDERS:
+        folder_fp = os.path.join(SOURCE_FOLDER, folder)
+        if(os.path.isdir(folder_fp)):
+            DS_list += find_DS(folder, verbose)
+
+    return DS_list
+
+def include_dept(file):
+    for dept in INCLUDE:
+        if dept in file:
+            return dept
+    return False
+
 
 #================== Program on run ============================================
 
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder)[0:3]:
 
-        # only attempt on excel sheets (exlude folder, etc)
-        if '.xlsx' not in detail_sheet:
-            continue
+    # get list of DS files
+    DS_list = [file for file in create_file_list() if include_dept(file)]
+    # print(DS_list)
+    for detail_sheet in DS_list:
+        print(detail_sheet)
+        load_workbook(detail_sheet)
         move_data(detail_sheet, dest_file)
     create_summary(dest_file)
     print("Created summary tab")

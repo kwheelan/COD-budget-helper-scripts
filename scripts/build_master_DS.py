@@ -142,7 +142,7 @@ def create_summary(destination_file):
         # baseline/supplemental column
         b_s_col = SUMMARY_SECTIONS[section]['baseline_col']
         
-        if approp_cell.value == 'Total':
+        if approp_cell.value == 'Subtotal':
             return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!${fund_col}:${fund_col}, {fund_cell.coordinate})'
         return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!${fund_col}:${fund_col}, {fund_cell.coordinate}, \'{tab}\'!${approp_col}:${approp_col}, {approp_cell.coordinate})'
 
@@ -176,10 +176,9 @@ def create_summary(destination_file):
             cell = summary.cell(row=active_row, column=col)
             cell.number_format = cell.number_format = '"$"#,##0' 
 
-        # NOT WORKING AFTER ADDING CONDITIONAL FORMATING
         # REPLACED WITH CONDITIONAL FORMATTING IN WB
         # # bold row if total row
-        # if approp_cell.value == 'Total':
+        # if approp_cell.value == 'Subtotal':
         #     for col in range(1, 19):
         #         cell = summary.cell(row=active_row, column=col)
         #         # turn row gray with bold

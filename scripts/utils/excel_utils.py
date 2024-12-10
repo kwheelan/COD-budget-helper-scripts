@@ -87,8 +87,8 @@ def adjust_formula(formula, row_offset=0):
 
 def last_data_row(sheet, n_header_rows):
     for row in range(n_header_rows+1, sheet.max_row):
-        dept = sheet.cell(row=row, column=1).value
-        if (not dept) or (dept == '-'):
+        fund = sheet.cell(row=row, column=4).value
+        if (not fund) or (fund == '-'):
             return row - 1
     return sheet.max_row
 

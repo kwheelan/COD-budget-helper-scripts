@@ -22,7 +22,7 @@ template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
 SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 
-INCLUDE = ['Airport']
+INCLUDE = ['Airport'] #, 'Fire', 'HRD']
 
 # Sheet name, columns to copy, start row
 SHEETS = {
@@ -128,7 +128,7 @@ def create_summary(destination_file):
     for key, values in funds.items():
         for value in values:
             rows.append([key, value])
-        rows.append([key, 'Total'])
+        rows.append([key, 'Subtotal'])
 
     # Copy to the summary tab
     summary = destination_wb['Summary']
@@ -176,13 +176,15 @@ def create_summary(destination_file):
             cell = summary.cell(row=active_row, column=col)
             cell.number_format = cell.number_format = '"$"#,##0' 
 
-        # bold row if total row
-        if approp_cell.value == 'Total':
-            for col in range(1, 19):
-                cell = summary.cell(row=active_row, column=col)
-                # turn row gray with bold
-                cell.font = Font(bold=True)
-                cell.fill = gray_fill
+        # NOT WORKING AFTER ADDING CONDITIONAL FORMATING
+        # REPLACED WITH CONDITIONAL FORMATTING IN WB
+        # # bold row if total row
+        # if approp_cell.value == 'Total':
+        #     for col in range(1, 19):
+        #         cell = summary.cell(row=active_row, column=col)
+        #         # turn row gray with bold
+        #         cell.font = Font(bold=True)
+        #         cell.fill = gray_fill
 
     # Save the workbook
     destination_wb.save(filename=destination_file)

@@ -50,6 +50,9 @@ def col_to_letter(n):
         return chr(n + 65)
     return col_to_letter( (n // 26) - 1) + col_to_letter(n % 26)
 
+def col_range(start, end):
+    return range(letter_to_col(start), letter_to_col(end) + 1)
+
 def adjust_formula(formula, row_offset=0):
     if not isinstance(formula, str) or not formula.startswith('='):
         return formula

@@ -10,7 +10,7 @@ from openpyxl.styles import Font
 import os
 import shutil
 # import custom functions
-from utils.excel_utils import copy_cols, last_data_row
+from utils.excel_utils import copy_cols, last_data_row, col_range
 
 # ===================== Constants ===============================
 
@@ -27,20 +27,16 @@ INCLUDE = ['Airport']
 # Sheet name, columns to copy, start row
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
-        'value_cols' : list('ABCDGILMNPQRSTUVZ') + ['AE', 'AH'],
-        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AD', 'AF', 'AG', 'AC'],
+        'cols' : col_range('A', 'AT'), # extra column for Police
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
-        'value_cols' : list('ABCDGIKNOPQRX'),
-        'formula_cols' : list('EFHJLMSTUVW'),
+        'cols' : col_range('A', 'AD'),
         'start_row' : 15 },
     'Non-Personnel' : {
-        'value_cols': list('ABCDGIKOPQRSTUVWXYZ'),
-        'formula_cols' : list('EFHJLMN'),
+        'cols' : col_range('A', 'AE'),
         'start_row' : 19 },
     'Revenue' : {
-        'value_cols': list('ABCDGIKPQRSTUVW'),
-        'formula_cols' : list('EFHJLMNO'),
+        'cols' : col_range('A', 'W'),
         'start_row' : 15 }
 }
 
@@ -48,27 +44,27 @@ SHEETS = {
 SUMMARY_SECTIONS = {
     'FTE' : {
         'tab' : 'FTE, Salary-Wage, & Benefits',
-        'count_col' : 'U',
+        'count_col' : 'AO',
         'baseline_col' : 'L'
     }, 
     'Salary & Benefits' : {
         'tab' : 'FTE, Salary-Wage, & Benefits',
-        'count_col': 'AG',
+        'count_col': 'AR',
         'baseline_col' : 'L'
     }, 
     'Non-Personnel' : {
         'tab' : 'Non-Personnel',
-        'count_col': 'Y',
+        'count_col': 'AD',
         'baseline_col' : 'O'
     }, 
     'Overtime' : {
         'tab' : 'Overtime & Other Personnel',
-        'count_col': 'W',
+        'count_col': 'AC',
         'baseline_col' : 'N'
     }, 
     'Revenue' : {
         'tab' : 'Revenue',
-        'count_col': 'V',
+        'count_col': 'Z',
         'baseline_col' : 'P'
     }}
 
@@ -82,7 +78,6 @@ def move_data(detail_sheet, destination_file):
     destination_wb = load_workbook(destination_file, data_only=False)
 
     for sheet in SHEETS:
-        #source_ws_values = source_wb_values[sheet]
         source_ws_formulas = source_wb_formulas[sheet]
         dest_ws = destination_wb[sheet]
         config = SHEETS[sheet]
@@ -91,14 +86,8 @@ def move_data(detail_sheet, destination_file):
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
         source_row_end = last_data_row(source_ws_formulas, n_header_rows=config['start_row']) + 1
         
-        # # Copy value columns
-        # copy_cols(source_ws_values, dest_ws, config['value_cols'], 
-        #           source_row_start=config['start_row'], 
-        #           destination_row_start=dest_start_row, 
-        #           source_row_end=source_row_end)
-        
         # Copy formula columns
-        copy_cols(source_ws_formulas, dest_ws, config['formula_cols'] + config['value_cols'], 
+        copy_cols(source_ws_formulas, dest_ws, config['cols'], 
                   source_row_start=config['start_row'], 
                   destination_row_start=dest_start_row,
                   source_row_end=source_row_end)
@@ -151,8 +140,8 @@ def create_summary(destination_file):
         b_s_col = SUMMARY_SECTIONS[section]['baseline_col']
         
         if approp_cell.value == 'Total':
-            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate})'
-        return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate}, \'{tab}\'!$G:$G, {approp_cell.coordinate})'
+            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!${fund_col}:${fund_col}, {fund_cell.coordinate})'
+        return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!${fund_col}:${fund_col}, {fund_cell.coordinate}, \'{tab}\'!${approp_col}:${approp_col}, {approp_cell.coordinate})'
 
     header_rows = 2
     # Write the transformed data to the sheet
@@ -246,9 +235,7 @@ def main():
 
     # get list of DS files
     DS_list = [file for file in create_file_list() if include_dept(file)]
-    # print(DS_list)
     for detail_sheet in DS_list:
-        print(detail_sheet)
         load_workbook(detail_sheet)
         move_data(detail_sheet, dest_file)
     create_summary(dest_file)

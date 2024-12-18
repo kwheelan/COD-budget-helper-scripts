@@ -50,6 +50,9 @@ def col_to_letter(n):
         return chr(n + 65)
     return col_to_letter( (n // 26) - 1) + col_to_letter(n % 26)
 
+def col_range(start, end):
+    return range(letter_to_col(start), letter_to_col(end) + 1)
+
 def adjust_formula(formula, row_offset=0):
     if not isinstance(formula, str) or not formula.startswith('='):
         return formula
@@ -84,8 +87,8 @@ def adjust_formula(formula, row_offset=0):
 
 def last_data_row(sheet, n_header_rows):
     for row in range(n_header_rows+1, sheet.max_row):
-        dept = sheet.cell(row=row, column=1).value
-        if (not dept) or (dept == '-'):
+        fund = sheet.cell(row=row, column=4).value
+        if (not fund) or (fund == '-'):
             return row - 1
     return sheet.max_row
 

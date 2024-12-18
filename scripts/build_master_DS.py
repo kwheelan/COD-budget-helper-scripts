@@ -6,11 +6,11 @@ Iterate through each file in detail_sheets,
 """
 
 from openpyxl import load_workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 import os
 import shutil
 # import custom functions
-from utils.excel_utils import copy_cols, last_data_row
+from utils.excel_utils import copy_cols, last_data_row, col_range
 
 # ===================== Constants ===============================
 
@@ -18,27 +18,25 @@ from utils.excel_utils import copy_cols, last_data_row
 DATA = 'input_data'
 OUTPUT = 'output'
 template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
-source_folder = f'{DATA}/detail_sheets_analyst_review'
-# source_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/03. Form Development/Detail Sheets/Clean Sheets (pre-send)'
+#source_folder = f'{DATA}/detail_sheets_analyst_review'
+SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
+
+INCLUDE = ['Airport'] #, 'Fire', 'HRD']
 
 # Sheet name, columns to copy, start row
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
-        'value_cols' : list('ABCDGILMNPQRSTUVZ') + ['AE', 'AH'],
-        'formula_cols' : list('EFHJKOWXY') + ['AA', 'AB', 'AD', 'AF', 'AG', 'AC'],
+        'cols' : col_range('A', 'AT'), # extra column for Police
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
-        'value_cols' : list('ABCDGIKNOPQRX'),
-        'formula_cols' : list('EFHJLMSTUVW'),
+        'cols' : col_range('A', 'AF'),
         'start_row' : 15 },
     'Non-Personnel' : {
-        'value_cols': list('ABCDGIKOPQRSTUVWXYZ'),
-        'formula_cols' : 'EFHJLMN',
+        'cols' : col_range('A', 'AE'),
         'start_row' : 19 },
     'Revenue' : {
-        'value_cols': list('ABCDGIKPQRSTUVW'),
-        'formula_cols' : 'EFHJLMNO',
+        'cols' : col_range('A', 'AA'),
         'start_row' : 15 }
 }
 
@@ -46,70 +44,59 @@ SHEETS = {
 SUMMARY_SECTIONS = {
     'FTE' : {
         'tab' : 'FTE, Salary-Wage, & Benefits',
-        'count_col' : 'U',
+        'count_col' : 'AO',
         'baseline_col' : 'L'
     }, 
     'Salary & Benefits' : {
         'tab' : 'FTE, Salary-Wage, & Benefits',
-        'count_col': 'AG',
+        'count_col': 'AR',
         'baseline_col' : 'L'
     }, 
     'Non-Personnel' : {
         'tab' : 'Non-Personnel',
-        'count_col': 'Y',
+        'count_col': 'AD',
         'baseline_col' : 'O'
     }, 
     'Overtime' : {
         'tab' : 'Overtime & Other Personnel',
-        'count_col': 'W',
+        'count_col': 'AC',
         'baseline_col' : 'N'
     }, 
     'Revenue' : {
         'tab' : 'Revenue',
-        'count_col': 'V',
+        'count_col': 'Z',
         'baseline_col' : 'P'
     }}
+
+# Set the gray fill for background color on Excel cells
+gray_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
 # ================== Script functions ===================================
 
 
 def move_data(detail_sheet, destination_file):
     # Load the workbooks
-    source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
-    source_wb_formulas = load_workbook(f'{source_folder}/{detail_sheet}', data_only=False)
+    #source_wb_values = load_workbook(f'{source_folder}/{detail_sheet}', data_only=True)
+    source_wb_formulas = load_workbook(detail_sheet, data_only=False)
     destination_wb = load_workbook(destination_file, data_only=False)
 
     for sheet in SHEETS:
-        source_ws_values = source_wb_values[sheet]
         source_ws_formulas = source_wb_formulas[sheet]
         dest_ws = destination_wb[sheet]
         config = SHEETS[sheet]
 
-        # def unfilter_table(sheet):
-        #     tables = sheet.tables.values()
-        #     for table in tables:
-        #         if table.autoFilter:
-        #             table.autoFilter.ref = None  # Remove any existing filter
-        # unfilter_table(source_ws_values)
-        # unfilter_table(source_ws_formulas)
-
         # Determine the starting row in the destination sheet for pasting data
         dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
-        source_row_end = last_data_row(source_ws_values, n_header_rows=config['start_row']) + 1
-        
-        # Copy value columns
-        copy_cols(source_ws_values, dest_ws, config['value_cols'], 
-                  source_row_start=config['start_row'], 
-                  destination_row_start=dest_start_row, 
-                  source_row_end=source_row_end)
+        source_row_end = last_data_row(source_ws_formulas, n_header_rows=config['start_row']) + 1
         
         # Copy formula columns
-        copy_cols(source_ws_formulas, dest_ws, config['formula_cols'], 
+        copy_cols(source_ws_formulas, dest_ws, config['cols'], 
                   source_row_start=config['start_row'], 
                   destination_row_start=dest_start_row,
                   source_row_end=source_row_end)
         
-        print(f'Copied {sheet} data from {detail_sheet}.')
+        name = detail_sheet.split('\\')[-1]
+        print(f'Copied {sheet} data from {name}.')
 
     destination_wb.save(destination_file)
 
@@ -141,7 +128,7 @@ def create_summary(destination_file):
     for key, values in funds.items():
         for value in values:
             rows.append([key, value])
-        rows.append([key, 'Total'])
+        rows.append([key, 'Subtotal'])
 
     # Copy to the summary tab
     summary = destination_wb['Summary']
@@ -155,9 +142,9 @@ def create_summary(destination_file):
         # baseline/supplemental column
         b_s_col = SUMMARY_SECTIONS[section]['baseline_col']
         
-        if approp_cell.value == 'Total':
-            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate})'
-        return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!$D:$D, {fund_cell.coordinate}, \'{tab}\'!$G:$G, {approp_cell.coordinate})'
+        if approp_cell.value == 'Subtotal':
+            return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!${fund_col}:${fund_col}, {fund_cell.coordinate})'
+        return f'=SUMIFS(\'{tab}\'!${col}:${col}, \'{tab}\'!${b_s_col}:${b_s_col}, "{baseOrSupp}", \'{tab}\'!${fund_col}:${fund_col}, {fund_cell.coordinate}, \'{tab}\'!${approp_col}:${approp_col}, {approp_cell.coordinate})'
 
     header_rows = 2
     # Write the transformed data to the sheet
@@ -189,14 +176,61 @@ def create_summary(destination_file):
             cell = summary.cell(row=active_row, column=col)
             cell.number_format = cell.number_format = '"$"#,##0' 
 
-        # bold row if total row
-        if approp_cell.value == 'Total':
-            for col in range(1, 19):
-                cell = summary.cell(row=active_row, column=col)
-                cell.font = Font(bold=True)
+        # REPLACED WITH CONDITIONAL FORMATTING IN WB
+        # # bold row if total row
+        # if approp_cell.value == 'Subtotal':
+        #     for col in range(1, 19):
+        #         cell = summary.cell(row=active_row, column=col)
+        #         # turn row gray with bold
+        #         cell.font = Font(bold=True)
+        #         cell.fill = gray_fill
 
     # Save the workbook
     destination_wb.save(filename=destination_file)
+
+# MOVE TO UTILS
+
+def find_DS(folder, verbose = False):
+    # Get full file path
+    folder_fp = os.path.join(SOURCE_FOLDER, folder)
+
+    # grab list of all files in that folder
+    files = os.listdir(folder_fp)
+
+    # generate list of reviewed detail sheets
+    reviewed_DS = []
+    for file in files:
+        if ('(Analyst Review)' in file or 'Library' in file) and '.xlsx' in file:
+            reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
+
+    # return message
+    if len(reviewed_DS) > 1:
+        message = f'Multiple potential reviewed detail sheets: {reviewed_DS}'
+    elif len(reviewed_DS) == 0:
+        message = f'No reviewed detail sheet found in {folder}'
+    if verbose:
+        print(message)
+
+    return reviewed_DS
+
+def create_file_list(verbose = False):
+    # all folders in analyst review section
+    DS_FOLDERS = os.listdir(SOURCE_FOLDER)
+
+    # initialize list and add viable files to it
+    DS_list = []
+    for folder in DS_FOLDERS:
+        folder_fp = os.path.join(SOURCE_FOLDER, folder)
+        if(os.path.isdir(folder_fp)):
+            DS_list += find_DS(folder, verbose)
+
+    return DS_list
+
+def include_dept(file):
+    for dept in INCLUDE:
+        if dept in file:
+            return dept
+    return False
 
 
 #================== Program on run ============================================
@@ -204,11 +238,11 @@ def create_summary(destination_file):
 def main():
     # copy the template
     shutil.copy(template_file, dest_file)
-    for detail_sheet in os.listdir(source_folder):
 
-        # only attempt on excel sheets (exlude folder, etc)
-        if '.xlsx' not in detail_sheet:
-            continue
+    # get list of DS files
+    DS_list = [file for file in create_file_list() if include_dept(file)]
+    for detail_sheet in DS_list:
+        load_workbook(detail_sheet)
         move_data(detail_sheet, dest_file)
     create_summary(dest_file)
     print("Created summary tab")

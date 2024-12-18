@@ -24,13 +24,12 @@ class Replacer:
     
     def replace_function(self, formula):
         # Regular expression to match the pattern
-        pattern = rf"('{self.sheet}'!\$){self.old_col}(\$[\d]+)?(:\$)?({self.old_col})?(\$[\d]+)?"
+        pattern = rf"('*{self.sheet}'*!\$){self.old_col}(\$[\d]+)?(:\$)?({self.old_col})?(\$[\d]+)?"
         
         def repl(match):
             sheet_part = match.group(1)
             first_reference_part = match.group(2) or ''
             range_separator = match.group(3) or ''
-            second_col_part = match.group(4) or ''
             second_reference_part = match.group(5) or ''
             
             if range_separator:
@@ -48,26 +47,73 @@ class Replacer:
 # Constants
 #======================================================================
 
-SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
+analyst_review_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
+budget_director_review_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
+SOURCE_FOLDER = budget_director_review_folder
+
+# analyst_review_replacements = {
+#     'FTE, Salary-Wage, & Benefits' : {
+#         'AG' : 'AR',
+#         'U': 'AO',
+#         'AA': 'AP',
+#         'AF': 'AQ'},
+#     'Overtime & Other Personnel' : {
+#         'R' : 'AC',
+#         'V' : 'AD',
+#         'W' : 'AE'},
+#     'Revenue' : {'V' : 'Z'},
+#     'Non-Personnel' : {'Y' : 'AC'}
+# }
+
+# def build_replacements(dict):
+#     replacer_list = []
+#     for sheet in dict.keys():
+#         for old_col in dict[sheet]:
+#             new_col = dict[sheet][old_col]
+#             replacer = Replacer(sheet, old_col, new_col)
+#             replacer_list.append(replacer)
+#     return replacer_list
+
+# REPLACEMENTS = [
+#     Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR'),
+#     Replacer('FTE, Salary-Wage, & Benefits', 'U', 'AO'),
+#     Replacer('FTE, Salary-Wage, & Benefits', 'AA', 'AP'),
+#     Replacer('FTE, Salary-Wage, & Benefits', 'AF', 'AQ'),
+#     Replacer('Overtime & Other Personnel', 'R', 'AC'),
+#     Replacer('Overtime & Other Personnel', 'V', 'AD'),
+#     Replacer('Overtime & Other Personnel', 'W', 'AE'),
+#     Replacer('Revenue', 'V', 'Z'),
+#     Replacer('Non-Personnel', 'Y', 'AC')
+# ]
+
+# POLICE_REPLACEMENTS = REPLACEMENTS.copy()
+# POLICE_REPLACEMENTS[0] = Replacer('FTE, Salary-Wage, & Benefits', 'AH', 'AS')
+# POLICE_REPLACEMENTS[1] = Replacer('FTE, Salary-Wage, & Benefits', 'V', 'AP')
+# POLICE_REPLACEMENTS[2] = Replacer('FTE, Salary-Wage, & Benefits', 'AB', 'AQ')
+# POLICE_REPLACEMENTS[3] = Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR')
 
 REPLACEMENTS = [
-    Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR'),
-    Replacer('FTE, Salary-Wage, & Benefits', 'U', 'AO'),
-    Replacer('FTE, Salary-Wage, & Benefits', 'AA', 'AP'),
-    Replacer('FTE, Salary-Wage, & Benefits', 'AF', 'AQ'),
-    Replacer('Overtime & Other Personnel', 'R', 'Y'),
-    Replacer('Overtime & Other Personnel', 'V', 'Z'),
-    Replacer('Overtime & Other Personnel', 'W', 'AC'),
-    Replacer('Non-Personnel', 'Y', 'AC')
+    Replacer('FTE, Salary-Wage, & Benefits', 'AR', 'BC'), #total
+    Replacer('FTE, Salary-Wage, & Benefits', 'AO', 'AZ'), #FTEs
+    Replacer('FTE, Salary-Wage, & Benefits', 'AP', 'AZ'), #salary/wage
+    Replacer('FTE, Salary-Wage, & Benefits', 'AQ', 'BB'), #fringe
+    Replacer('Overtime & Other Personnel', 'AC', 'AK'), #OT 
+    Replacer('Overtime & Other Personnel', 'AD', 'AL'), # FICA
+    Replacer('Overtime & Other Personnel', 'AE', 'AM'), #total
+    Replacer('Revenue', 'Z', 'AD'), #total
+    Replacer('Non-Personnel', 'AC', 'AG') #total
 ]
 
-POLICE_REPLACEMENTS = REPLACEMENTS.copy()
-POLICE_REPLACEMENTS[0] = Replacer('FTE, Salary-Wage, & Benefits', 'AH', 'AS')
-POLICE_REPLACEMENTS[1] = Replacer('FTE, Salary-Wage, & Benefits', 'V', 'AP')
-POLICE_REPLACEMENTS[2] = Replacer('FTE, Salary-Wage, & Benefits', 'AB', 'AQ')
-POLICE_REPLACEMENTS[3] = Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR')
+POLICE_REPLACEMENTS = []
 
-SHEETS = ['Dept Summary', 'Initiatives Summary']
+#SHEETS = ['Dept Summary', 'Initiatives Summary']
+SHEETS = ['Budget Director Summary', 'Initiatives Summary']
+
+SAVE_TO = 'output/formula_replacements/'
+
+KEY = '(Deputy Budget Director)' #'(Analyst Review)
+
+EXCLUDE = ['Police', 'DSLP']
 
 #======================================================================
 # Helpers
@@ -82,7 +128,7 @@ def replace_all(formula, police = False):
         formula = replacer.replace_function(formula)
     return formula
 
-def find_DS(folder, verbose = False):
+def find_DS(folder, keyword=KEY, exclude=EXCLUDE, verbose=False):
     # Get full file path
     folder_fp = os.path.join(SOURCE_FOLDER, folder)
 
@@ -92,15 +138,16 @@ def find_DS(folder, verbose = False):
     # generate list of reviewed detail sheets
     reviewed_DS = []
     for file in files:
-        if ('(Analyst Review)' in file or 'Library' in file) and '.xlsx' in file:
+        if (keyword in file) and ('.xlsx' in file) and not (sum([(word in file) for word in exclude])):
             reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
 
     # return message
+    message = None
     if len(reviewed_DS) > 1:
         message = f'Multiple potential reviewed detail sheets: {reviewed_DS}'
     elif len(reviewed_DS) == 0:
         message = f'No reviewed detail sheet found in {folder}'
-    if verbose:
+    if verbose and message:
         print(message)
 
     return reviewed_DS
@@ -114,11 +161,18 @@ def create_file_list(verbose = False):
     for folder in DS_FOLDERS:
         folder_fp = os.path.join(SOURCE_FOLDER, folder)
         if(os.path.isdir(folder_fp)):
-            DS_list += find_DS(folder, verbose)
+            DS_list += find_DS(folder, keyword=KEY, exclude=EXCLUDE, verbose=verbose)
 
     return DS_list
 
-def edit_formulas(file, verbose=False):
+# def fix_compatibility(formula):
+#     # Use regex to find and remove curly braces around formulas or @
+#     #formula = re.sub(r'{([^{}@]+)}', r'\1', formula)
+#     #formula = formula.replace('_xlfn.', '')
+#     #formula = formula.replace('_xlws.', '')
+#     return formula
+
+def edit_formulas(file, verbose=False, save_to=False):
     # check if it's the police DS
     police = 'Police' in file
 
@@ -132,15 +186,14 @@ def edit_formulas(file, verbose=False):
         # Iterate through all cells in the sheet
         for row in ws.iter_rows():
             for cell in row:
-                if isinstance(cell.value, str) and cell.value.startswith('='): # and 'SUMIFS' in cell.value:
-                    
-                    # store old formula; deal with array formulas
-                    if isinstance(cell.value, worksheet.formula.ArrayFormula):
-                        cell.value = cell.value.text
+
+                if isinstance(cell.value, str) and "=" in cell.value:
+                    # store old formula
                     original_formula = cell.value
 
                     # replace formula
                     new_formula = replace_all(original_formula, police)
+
                     if original_formula != new_formula:
                         # print optional message
                         if verbose:
@@ -149,8 +202,10 @@ def edit_formulas(file, verbose=False):
 
     # save workbook
     name = file.split('\\')[-1]
-    #wb.save(f'output/formula_replacements/backups/{name}')
-    wb.save(file)
+    if save_to:
+        wb.save(f'{SAVE_TO}/{name}')
+    else:
+        wb.save(file)
     print(f'Saved {name}')
 
 def extract_data_validations(ws):

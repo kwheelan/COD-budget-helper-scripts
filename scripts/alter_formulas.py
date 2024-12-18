@@ -10,6 +10,119 @@ from openpyxl import load_workbook, worksheet
 from openpyxl.worksheet.datavalidation import DataValidation
 
 #======================================================================
+# Constants
+#======================================================================
+
+analyst_review_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
+budget_director_review_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
+SOURCE_FOLDER = budget_director_review_folder
+
+analyst_review_replacements = {
+    'FTE, Salary-Wage, & Benefits' : {
+        'AG' : 'AR',
+        'U': 'AO',
+        'AA': 'AP',
+        'AF': 'AQ'},
+    'Overtime & Other Personnel' : {
+        'R' : 'AC',
+        'V' : 'AD',
+        'W' : 'AE'},
+    'Revenue' : {'V' : 'Z'},
+    'Non-Personnel' : {'Y' : 'AC'}
+}
+
+analyst_review_replacements = {
+    'FTE, Salary-Wage, & Benefits' : {
+        'AG' : 'AR',
+        'U': 'AO',
+        'AA': 'AP',
+        'AF': 'AQ'},
+    'Overtime & Other Personnel' : {
+        'R' : 'AC',
+        'V' : 'AD',
+        'W' : 'AE'},
+    'Revenue' : {'V' : 'Z'},
+    'Non-Personnel' : {'Y' : 'AC'}
+}
+
+police_replacements = analyst_review_replacements.copy()
+police_replacements['FTE, Salary-Wage, & Benefits'] = {
+        'AH' : 'AS',
+        'V': 'AP',
+        'AB': 'AQ',
+        'AG': 'AR'}
+
+director_review_replacements = {
+    'FTE, Salary-Wage, & Benefits' : {
+        'AO' : 'AZ',
+        'AP' : 'BA',
+        'AQ' : 'BB',
+        'AR' : 'BC'},
+    'Overtime & Other Personnel' : {
+        'AC' : 'AK',
+        'AD' : 'AL',
+        'AE' : 'AM'},
+    'Revenue' : {'Z' : 'AD'},
+    'Non-Personnel' : {'AC' : 'AG'}
+}
+
+#SHEETS = ['Dept Summary', 'Initiatives Summary']
+SHEETS = ['Budget Director Summary', 'Initiatives Summary']
+
+REPLACEMENT_DICT = director_review_replacements
+
+SAVE_TO = 'output/formula_replacements/'
+
+KEY = '(Deputy Budget Director)' #'(Analyst Review)
+
+EXCLUDE = ['Police', 'DSLP']
+
+
+def dd_ref(range) : return f"'Drop-Down Menus'!{range}"
+
+DROPDOWN_OPTIONS = {
+    'Baseline' : dd_ref('$A$7:$A$8'),
+    'Baseline-Capital' : dd_ref('$A$2:$A$5'),
+    'Recurring' : dd_ref('$C$2:$C$3'),
+    'Employee-Type' : dd_ref('$G$2:$G$8'),
+    'Position-Status' : dd_ref('$I$2:$I$4'),
+    'Service' : dd_ref('$M$2:$M$11'),
+    'Approval' : dd_ref('$E$2:$E$4')
+}
+
+DROPDOWNS = {
+    'FTE, Salary-Wage, & Benefits' : {
+        'L15:L10000' : DROPDOWN_OPTIONS['Baseline'],
+        'M15:M10000' : DROPDOWN_OPTIONS['Recurring'],
+        'P15:P10000' : DROPDOWN_OPTIONS['Employee-Type'],
+        'Q15:Q10000' : DROPDOWN_OPTIONS['Position-Status'],
+        'S15:S10000' : DROPDOWN_OPTIONS['Service'],
+        'AN15:AN10000' : DROPDOWN_OPTIONS['Approval'],
+        'AY15:AY10000' : DROPDOWN_OPTIONS['Approval']
+    },
+    'Overtime & Other Personnel' : {
+        'N15:N10000' : DROPDOWN_OPTIONS['Baseline'],
+        'O15:O10000' : DROPDOWN_OPTIONS['Recurring'],
+        'Q15:Q10000' : DROPDOWN_OPTIONS['Service'],
+        'AB15:AB10000' : DROPDOWN_OPTIONS['Approval'],
+        'AJ15:AJ10000' : DROPDOWN_OPTIONS['Approval']
+    },
+    'Non-Personnel' : {
+        'O19:O10000' : DROPDOWN_OPTIONS['Baseline-Capital'],
+        'P19:P10000' : DROPDOWN_OPTIONS['Recurring'],
+        'X19:X10000' : DROPDOWN_OPTIONS['Service'],
+        'AB19:AB10000' : DROPDOWN_OPTIONS['Approval'],
+        'AF19:AF10000' : DROPDOWN_OPTIONS['Approval']
+    },
+    'Revenue' : {
+        'P15:P10000' : DROPDOWN_OPTIONS['Baseline-Capital'],
+        'Q15:Q10000' : DROPDOWN_OPTIONS['Recurring'],
+        'Y15:Y10000' : DROPDOWN_OPTIONS['Approval'],
+        'AC15:AC10000' : DROPDOWN_OPTIONS['Approval']
+    },
+}
+
+#======================================================================
 # Replacer class
 #======================================================================
 
@@ -43,77 +156,19 @@ class Replacer:
         result = re.sub(pattern, repl, formula)
         return(result) 
 
-#======================================================================
-# Constants
-#======================================================================
 
-analyst_review_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
-budget_director_review_folder = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
-SOURCE_FOLDER = budget_director_review_folder
+def build_replacements(dict):
+    replacer_list = []
+    for sheet in dict.keys():
+        for old_col in dict[sheet]:
+            new_col = dict[sheet][old_col]
+            replacer = Replacer(sheet, old_col, new_col)
+            replacer_list.append(replacer)
+    return replacer_list
 
-# analyst_review_replacements = {
-#     'FTE, Salary-Wage, & Benefits' : {
-#         'AG' : 'AR',
-#         'U': 'AO',
-#         'AA': 'AP',
-#         'AF': 'AQ'},
-#     'Overtime & Other Personnel' : {
-#         'R' : 'AC',
-#         'V' : 'AD',
-#         'W' : 'AE'},
-#     'Revenue' : {'V' : 'Z'},
-#     'Non-Personnel' : {'Y' : 'AC'}
-# }
-
-# def build_replacements(dict):
-#     replacer_list = []
-#     for sheet in dict.keys():
-#         for old_col in dict[sheet]:
-#             new_col = dict[sheet][old_col]
-#             replacer = Replacer(sheet, old_col, new_col)
-#             replacer_list.append(replacer)
-#     return replacer_list
-
-# REPLACEMENTS = [
-#     Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR'),
-#     Replacer('FTE, Salary-Wage, & Benefits', 'U', 'AO'),
-#     Replacer('FTE, Salary-Wage, & Benefits', 'AA', 'AP'),
-#     Replacer('FTE, Salary-Wage, & Benefits', 'AF', 'AQ'),
-#     Replacer('Overtime & Other Personnel', 'R', 'AC'),
-#     Replacer('Overtime & Other Personnel', 'V', 'AD'),
-#     Replacer('Overtime & Other Personnel', 'W', 'AE'),
-#     Replacer('Revenue', 'V', 'Z'),
-#     Replacer('Non-Personnel', 'Y', 'AC')
-# ]
-
-# POLICE_REPLACEMENTS = REPLACEMENTS.copy()
-# POLICE_REPLACEMENTS[0] = Replacer('FTE, Salary-Wage, & Benefits', 'AH', 'AS')
-# POLICE_REPLACEMENTS[1] = Replacer('FTE, Salary-Wage, & Benefits', 'V', 'AP')
-# POLICE_REPLACEMENTS[2] = Replacer('FTE, Salary-Wage, & Benefits', 'AB', 'AQ')
-# POLICE_REPLACEMENTS[3] = Replacer('FTE, Salary-Wage, & Benefits', 'AG', 'AR')
-
-REPLACEMENTS = [
-    Replacer('FTE, Salary-Wage, & Benefits', 'AR', 'BC'), #total
-    Replacer('FTE, Salary-Wage, & Benefits', 'AO', 'AZ'), #FTEs
-    Replacer('FTE, Salary-Wage, & Benefits', 'AP', 'AZ'), #salary/wage
-    Replacer('FTE, Salary-Wage, & Benefits', 'AQ', 'BB'), #fringe
-    Replacer('Overtime & Other Personnel', 'AC', 'AK'), #OT 
-    Replacer('Overtime & Other Personnel', 'AD', 'AL'), # FICA
-    Replacer('Overtime & Other Personnel', 'AE', 'AM'), #total
-    Replacer('Revenue', 'Z', 'AD'), #total
-    Replacer('Non-Personnel', 'AC', 'AG') #total
-]
 
 POLICE_REPLACEMENTS = []
-
-#SHEETS = ['Dept Summary', 'Initiatives Summary']
-SHEETS = ['Budget Director Summary', 'Initiatives Summary']
-
-SAVE_TO = 'output/formula_replacements/'
-
-KEY = '(Deputy Budget Director)' #'(Analyst Review)
-
-EXCLUDE = ['Police', 'DSLP']
+REPLACEMENTS = build_replacements(REPLACEMENT_DICT)
 
 #======================================================================
 # Helpers
@@ -165,13 +220,6 @@ def create_file_list(verbose = False):
 
     return DS_list
 
-# def fix_compatibility(formula):
-#     # Use regex to find and remove curly braces around formulas or @
-#     #formula = re.sub(r'{([^{}@]+)}', r'\1', formula)
-#     #formula = formula.replace('_xlfn.', '')
-#     #formula = formula.replace('_xlws.', '')
-#     return formula
-
 def edit_formulas(file, verbose=False, save_to=False):
     # check if it's the police DS
     police = 'Police' in file
@@ -200,6 +248,9 @@ def edit_formulas(file, verbose=False, save_to=False):
                             print(f"Replacing {original_formula} with {new_formula} at cell {cell.coordinate}")
                         cell.value = new_formula
 
+    # Add back drop down menus
+    add_dropdowns(wb)
+
     # save workbook
     name = file.split('\\')[-1]
     if save_to:
@@ -208,72 +259,37 @@ def edit_formulas(file, verbose=False, save_to=False):
         wb.save(file)
     print(f'Saved {name}')
 
-def extract_data_validations(ws):
-    """
-    Extract data validation settings from a worksheet.
-    """
-    validations = []
-    for dv in ws.data_validations.dataValidation:
-        # Extract the relevant properties of the data validation 
-        dv_props = {
-            "type": dv.type,
-            "formula1": dv.formula1,
-            "formula2": dv.formula2,
-            "allow_blank": dv.allow_blank,
-            "showDropDown": dv.showDropDown,
-            "sqref": dv.sqref  # Range of cells
-        }
-        validations.append(dv_props)
-    return validations
+def add_dropdowns(wb):
+    for sheet in DROPDOWNS.keys():
+        ws = wb[sheet]
 
-def get_all_data_validations(file):
-    """ Save dropdowns from each sheet """
-    # open file 
-    wb = load_workbook(file, data_only=False)
-    validations = {}
-    for sheet in SHEETS.keys():
-        validations[sheet] = extract_data_validations(wb[sheet])
+        # for each column
+        for cell_range in DROPDOWNS[sheet].keys():
+                
+            # build data validation
+            dv = DataValidation(
+                type="list",
+                formula1=f'={DROPDOWNS[sheet][cell_range]}',
+                showDropDown=False
+            )
 
-def apply_data_validations(ws, validations):
-    """
-    Apply saved data validation settings to a worksheet.
-    """
-    for dv_props in validations:
-        dv = DataValidation(
-            type=dv_props["type"],
-            formula1=dv_props["formula1"],
-            formula2=dv_props["formula2"],
-            allow_blank=dv_props["allow_blank"],
-            showDropDown=dv_props["showDropDown"],
-        )
-        ws.add_data_validation(dv)
-        dv.ranges = dv_props["sqref"]
+            # Add the data validation to a specific cell, e.g., A1
+            ws.add_data_validation(dv)
+            dv.add(cell_range)
 
-def apply_all_data_validations(file, validations):
-    """ add back all drop downs """
-    # open file 
-    wb = load_workbook(file, data_only=False)
-    for sheet in validations.keys():
-        apply_all_data_validations(wb[sheet], validations[sheet])
-    wb.save(file)
 
 #======================================================================
 # Main
 #======================================================================
 
 def test():
-    #text = """'FTE, Salary-Wage, & Benefits'!$AG$2 + SUM('FTE, Salary-Wage, & Benefits'!$AG$15:$AG$1000)"""
-    text = """=SUMIFS('FTE, Salary-Wage, & Benefits'!$AG:$AG,'FTE, Salary-Wage, & Benefits'!$L:$L,"Baseline",'FTE, Salary-Wage, & Benefits'!$G:$G,$W7)
-+SUMIFS('Overtime & Other Personnel'!$W:$W,'Overtime & Other Personnel'!$N:$N,"Baseline",'Overtime & Other Personnel'!$G:$G,$W7)
-+SUMIFS('Non-Personnel'!$Y:$Y,'Non-Personnel'!$O:$O,"Baseline*",'Non-Personnel'!$G:$G,$W7)
-"""
+    text = """'FTE, Salary-Wage, & Benefits'!$AG$2 + SUM('FTE, Salary-Wage, & Benefits'!$AG$15:$AG$1000)"""
     print(replace_all(text))
 
 def main():
-    validations = get_all_data_validations(?)
-    files = create_file_list()
+    files = create_file_list()[1:2]
     for file in files:
-        edit_formulas(file)
+        edit_formulas(file, save_to=SAVE_TO)
 
 if __name__ == '__main__':
     #test()

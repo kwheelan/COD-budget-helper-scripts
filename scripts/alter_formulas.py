@@ -7,6 +7,7 @@ A script to change all summary formulas to pull from the approved budget recomme
 import re
 import os
 from openpyxl import load_workbook, worksheet
+from openpyxl.worksheet.datavalidation import DataValidation
 
 #======================================================================
 # Replacer class
@@ -152,6 +153,55 @@ def edit_formulas(file, verbose=False):
     wb.save(file)
     print(f'Saved {name}')
 
+def extract_data_validations(ws):
+    """
+    Extract data validation settings from a worksheet.
+    """
+    validations = []
+    for dv in ws.data_validations.dataValidation:
+        # Extract the relevant properties of the data validation 
+        dv_props = {
+            "type": dv.type,
+            "formula1": dv.formula1,
+            "formula2": dv.formula2,
+            "allow_blank": dv.allow_blank,
+            "showDropDown": dv.showDropDown,
+            "sqref": dv.sqref  # Range of cells
+        }
+        validations.append(dv_props)
+    return validations
+
+def get_all_data_validations(file):
+    """ Save dropdowns from each sheet """
+    # open file 
+    wb = load_workbook(file, data_only=False)
+    validations = {}
+    for sheet in SHEETS.keys():
+        validations[sheet] = extract_data_validations(wb[sheet])
+
+def apply_data_validations(ws, validations):
+    """
+    Apply saved data validation settings to a worksheet.
+    """
+    for dv_props in validations:
+        dv = DataValidation(
+            type=dv_props["type"],
+            formula1=dv_props["formula1"],
+            formula2=dv_props["formula2"],
+            allow_blank=dv_props["allow_blank"],
+            showDropDown=dv_props["showDropDown"],
+        )
+        ws.add_data_validation(dv)
+        dv.ranges = dv_props["sqref"]
+
+def apply_all_data_validations(file, validations):
+    """ add back all drop downs """
+    # open file 
+    wb = load_workbook(file, data_only=False)
+    for sheet in validations.keys():
+        apply_all_data_validations(wb[sheet], validations[sheet])
+    wb.save(file)
+
 #======================================================================
 # Main
 #======================================================================
@@ -165,6 +215,7 @@ def test():
     print(replace_all(text))
 
 def main():
+    validations = get_all_data_validations(?)
     files = create_file_list()
     for file in files:
         edit_formulas(file)

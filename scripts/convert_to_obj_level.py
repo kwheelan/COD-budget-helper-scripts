@@ -10,11 +10,10 @@ FRINGE_TAB_NAME = f'FY{YEAR} Fringe Rates'
 DATA = 'input_data'
 OUTPUT = 'output'
 
-source_folder = f'{DATA}/detail_sheets'
-# master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
-master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
+master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
+#source_folder = f'{DATA}/detail_sheets'
+#master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
 output_file = f'{OUTPUT}/obj_level.xlsx'
-
 
 # columns to be retained from all sheets
 cols_to_keep =  ['Fund',
@@ -50,10 +49,7 @@ SHEETS = {
 }
 
 def read_master_detail(sheet_filename):
-    # read Excel using pandas
-    xls = pd.ExcelFile(sheet_filename)
-
-    # Read individual sheets into DataFrames
+    # Read individual sheets (tabs) into DataFrames
     dfs = {sheet: pd.read_excel(sheet_filename, sheet_name=sheet, header=SHEETS[sheet]['header']) for sheet in SHEETS}
     
     # Separate FY26 Fringe for lookup
@@ -144,6 +140,7 @@ def create_id_column(df, include_columns=None):
     return df
 
 def process_sheet(dfs, sheet_name, fringe_lookup):
+    print(f'Processing {sheet_name}')
     # clean column names
     df = clean_dataframe_columns(dfs[sheet_name])
 
@@ -163,18 +160,18 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
 
     # process OT
     # # TODO fix with FICA objects
-    # if sheet_name == 'Overtime & Other Personnel':
-    #     df.rename(columns={'OT/SP/Hol Object' :'Object'})
+    if sheet_name == 'Overtime & Other Personnel':
+        df.rename(columns={'OT/SP/Hol Object' :'Object'})
 
-    # # ID column
-    # df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
-    #                            'Object',
-    #                           'Recurring or One-Time', 'Baseline or Supplemental'])
+    # ID column
+    df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
+                               'Object',
+                              'Recurring or One-Time', 'Baseline or Supplemental'])
     
-    # # Group by the ID column and sum the "Amount" values
-    # grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+    # Group by the ID column and sum the "Amount" values
+    grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
 
-    # return grouped_df
+    return grouped_df
 
 #================= Process personnel ========================================
 
@@ -200,11 +197,6 @@ def process_personnel(df, fringe_lookup):
     df = create_id_column(expanded_df, ['Fund', 'Appropriation', 'Cost Center', 
                                'Object',
                               'Recurring or One-Time', 'Baseline or Supplemental'])
-    
-    # Group by the ID column and sum the "Amount" values
-    #df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
-
-    df.to_excel(output_file, index=False)
 
     return df
 
@@ -220,6 +212,10 @@ def main():
     # process all the dataframes
     for df_key in dfs:
         df_processed = process_sheet(dfs, df_key, fringeLookup)
+        # Group by the ID column and sum the "Amount" values
+        df_processed = df_processed.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+        # save as excel
+        df_processed.to_excel(output_file, index=False)
 
 if __name__ == '__main__':
     main()

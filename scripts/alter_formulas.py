@@ -227,8 +227,9 @@ def edit_formulas(file, verbose=False, save_to=False, backup=False):
     # open file 
     wb = load_workbook(file, data_only=False)
 
+    name = file.split('\\')[-1]
     if(backup):
-        wb.save(backup)
+        wb.save(f'{SAVE_TO}/{name}')
 
     # make replacements on both dept summary and init summary
     for sheet in SHEETS:
@@ -290,7 +291,7 @@ def test():
     print(replace_all(text))
 
 def main():
-    files = create_file_list()[1:2]
+    files = create_file_list()
     for file in files:
         edit_formulas(file, backup=SAVE_TO)
 

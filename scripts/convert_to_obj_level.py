@@ -161,7 +161,7 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # process OT
     # # TODO fix with FICA objects
     if sheet_name == 'Overtime & Other Personnel':
-        df.rename(columns={'OT/SP/Hol Object' :'Object'})
+        df = df.rename(columns={'OT/SP/Hol Object' :'Object'})
 
     # ID column
     df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
@@ -169,9 +169,9 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
                               'Recurring or One-Time', 'Baseline or Supplemental'])
     
     # Group by the ID column and sum the "Amount" values
-    grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+  #  grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
 
-    return grouped_df
+    return df
 
 #================= Process personnel ========================================
 
@@ -195,8 +195,8 @@ def process_personnel(df, fringe_lookup):
 
     # ID column
     df = create_id_column(expanded_df, ['Fund', 'Appropriation', 'Cost Center', 
-                               'Object',
-                              'Recurring or One-Time', 'Baseline or Supplemental'])
+                                        'Object', 'Recurring or One-Time', 
+                                        'Baseline or Supplemental'])
 
     return df
 
@@ -209,13 +209,17 @@ def main():
 
     # print(fringeLookup.lookup_fringe('General City Civilian', 603125))
 
-    # process all the dataframes
+    dataframes = []
+    # process all the dataframes and add them to an array
     for df_key in dfs:
-        df_processed = process_sheet(dfs, df_key, fringeLookup)
-        # Group by the ID column and sum the "Amount" values
-        df_processed = df_processed.groupby('ID', as_index=False).agg({'Amount': 'sum'})
-        # save as excel
-        df_processed.to_excel(output_file, index=False)
+        dataframes.append(process_sheet(dfs, df_key, fringeLookup))
+    
+    df_processed = pd.concat(dataframes)
+    # Group by the ID column and concat by the "Amount" values
+    #df_processed = df_processed.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+    
+    # save as excel
+    df_processed.to_excel(output_file, index=False)
 
 if __name__ == '__main__':
     main()

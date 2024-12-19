@@ -30,9 +30,11 @@ SHEETS = {
         'header': 13
     },  
     'Overtime & Other Personnel': {
-        'cols': cols_to_keep + ['Departmental Request OT/SP/Hol',
-           'FICA Object',
-           'OT/SP/Hol Object'],
+        'cols': cols_to_keep + [
+            'Budget Recommend OT/SP/Hol',
+            'Budget Recommend FICA',
+            'FICA Object',
+            'OT/SP/Hol Object'],
         'header': 13
     },
     'Non-Personnel': {
@@ -49,8 +51,17 @@ SHEETS = {
 }
 
 def read_master_detail(sheet_filename):
+
+    dtype_spec = {
+        'Fringe \nBenefits \nPackage ': str  # Replace 'column_name' with your actual column name
+    }
     # Read individual sheets (tabs) into DataFrames
-    dfs = {sheet: pd.read_excel(sheet_filename, sheet_name=sheet, header=SHEETS[sheet]['header']) for sheet in SHEETS}
+    dfs = {sheet: pd.read_excel(sheet_filename, 
+                                sheet_name=sheet, 
+                                header=SHEETS[sheet]['header']) 
+            for sheet in SHEETS}
+    ftes = clean_dataframe_columns(dfs['FTE, Salary-Wage, & Benefits'])
+    print(ftes['Fringe Benefits Package'])
     
     # Separate FY26 Fringe for lookup
     lookup_df = dfs.pop(FRINGE_TAB_NAME)
@@ -156,12 +167,12 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
 
     # process personnel
     if sheet_name == 'FTE, Salary-Wage, & Benefits':
+        print(df['Fringe Benefits Package'])
         df = process_personnel(df, fringe_lookup)
 
     # process OT
-    # # TODO fix with FICA objects
     if sheet_name == 'Overtime & Other Personnel':
-        df = df.rename(columns={'OT/SP/Hol Object' :'Object'})
+        df = process_OT(df)
 
     # ID column
     df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
@@ -169,7 +180,10 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
                               'Recurring or One-Time', 'Baseline or Supplemental'])
     
     # Group by the ID column and sum the "Amount" values
-  #  grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+    #  grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
+
+    # delete emty rows
+    #df = df[df['Amount'] > 0]
 
     return df
 
@@ -183,32 +197,46 @@ def process_personnel(df, fringe_lookup):
         for obj in fringe_lookup.obj_list():
             new_row = row.copy()
             new_row['Object'] = obj
-            rate = fringe_lookup.lookup_fringe(new_row['Fringe Benefits Package'], obj)
+            package = new_row['Fringe Benefits Package']
+            rate = fringe_lookup.lookup_fringe(package, obj)
             new_row['Fringe Rate'] = rate
             new_row['Amount'] = rate * new_row['Salary/Wage Total Request (incl. GWI & Merit)']
             expanded_rows.append(new_row)
     
     expanded_df = pd.DataFrame(expanded_rows)
+    return expanded_df
 
-    # delete emty rows
-    expanded_df = expanded_df[expanded_df['Amount'] > 0]
 
-    # ID column
-    df = create_id_column(expanded_df, ['Fund', 'Appropriation', 'Cost Center', 
-                                        'Object', 'Recurring or One-Time', 
-                                        'Baseline or Supplemental'])
+def process_OT(df):
+    df.rename(columns={'OT/SP/Hol Object' :'Object'})
 
-    return df
+    # Expand dataframe so each row becomes a row for each object in FringeLookup.obj_list()
+    expanded_rows = []
+    for _, row in df.iterrows():
+        for obj in ['OT/SP/Hol', 'FICA']:
+            new_row = row.copy()
+            new_row['Object'] = new_row[f'{obj} Object']
+            new_row['Amount'] = new_row[f'Budget Recommend {obj}']
+            expanded_rows.append(new_row)
+    
+    expanded_df = pd.DataFrame(expanded_rows)
+    return expanded_df
 
 # ==================== Main ==========================================
+
+
+def test():
+    dfs, lookup_df = read_master_detail(master_DS_filepath)
+    # create lookup table
+    fringeLookup = FringeLookup(lookup_df)
+    for obj in fringeLookup.obj_list():
+        rate = fringeLookup.lookup_fringe('General City Civilian', obj)
+        print(f'Obj: {obj}, rate: {rate*100}%') 
 
 def main():
     dfs, lookup_df = read_master_detail(master_DS_filepath)
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
-
-    # print(fringeLookup.lookup_fringe('General City Civilian', 603125))
-
     dataframes = []
     # process all the dataframes and add them to an array
     for df_key in dfs:

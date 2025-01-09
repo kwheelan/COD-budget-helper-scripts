@@ -11,24 +11,24 @@ DATA = 'input_data'
 OUTPUT = 'output'
 
 master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
-#source_folder = f'{DATA}/detail_sheets'
-#master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
 output_file = f'{OUTPUT}/obj_level.xlsx'
 
 # columns to be retained from all sheets
-cols_to_keep =  ['Fund', 'Fund Name',
-                 'Appropriation', 'Appropriation Name',
-                 'Cost Center', 'Cost Center Name',
+cols_to_keep =  ['Fund', #'Fund Name',
+                 'Appropriation', #'Appropriation Name',
+                 'Cost Center', #'Cost Center Name',
                  'Recurring or One-Time', 
-                 'Baseline or Supplemental' ]
+                 'Baseline or Supplemental',
+                 'Service' ]
 
 # columns to be retained from all sheets
-full_cols_to_keep =  ['Fund', 'Fund Name',
-                    'Appropriation', 'Appropriation Name',
-                    'Cost Center', 'Cost Center Name',
+full_cols_to_keep =  ['Fund', #'Fund Name',
+                    'Appropriation', #'Appropriation Name',
+                    'Cost Center', #'Cost Center Name',
                     'Object', #'Object Name',
                     'Recurring or One-Time', 
-                    'Baseline or Supplemental' ]
+                    'Baseline or Supplemental',
+                    'Service']
 
 totals = {
     'FTE, Salary-Wage, & Benefits': 'Budget Recommend Salary/Wage',
@@ -62,7 +62,7 @@ SHEETS = {
     }
 }
 
-def read_master_detail(sheet_filename):
+def read_DS(sheet_filename):
 
     # Read individual sheets (tabs) into DataFrames
     dfs = {sheet: pd.read_excel(sheet_filename, 
@@ -233,19 +233,8 @@ def process_OT(df):
     expanded_df = pd.DataFrame(expanded_rows)
     return expanded_df
 
-# ==================== Main ==========================================
-
-
-def test():
-    dfs, lookup_df = read_master_detail(master_DS_filepath)
-    # create lookup table
-    fringeLookup = FringeLookup(lookup_df)
-    for obj in fringeLookup.obj_list():
-        rate = fringeLookup.lookup_fringe('General City Civilian', obj)
-        print(f'Obj: {obj}, rate: {rate*100}%') 
-
-def main():
-    dfs, lookup_df = read_master_detail(master_DS_filepath)
+def convert(filename):
+    dfs, lookup_df = read_DS(filename)
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
     dataframes = []
@@ -263,6 +252,20 @@ def main():
     
     # save as excel
     cleaned_df.to_excel(output_file, index=False)
+
+# ==================== Main ==========================================
+
+
+def test():
+    _, lookup_df = read_DS(master_DS_filepath)
+    # create lookup table
+    fringeLookup = FringeLookup(lookup_df)
+    for obj in fringeLookup.obj_list():
+        rate = fringeLookup.lookup_fringe('General City Civilian', obj)
+        print(f'Obj: {obj}, rate: {rate*100}%') 
+
+def main():
+    convert(master_DS_filepath)
 
 if __name__ == '__main__':
     main()

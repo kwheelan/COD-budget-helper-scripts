@@ -10,38 +10,51 @@ FRINGE_TAB_NAME = f'FY{YEAR} Fringe Rates'
 DATA = 'input_data'
 OUTPUT = 'output'
 
-source_folder = f'{DATA}/detail_sheets'
-# master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
-master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
+master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
+#source_folder = f'{DATA}/detail_sheets'
+#master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
 output_file = f'{OUTPUT}/obj_level.xlsx'
 
-
 # columns to be retained from all sheets
-cols_to_keep =  ['Fund',
-                 'Appropriation', 
-                 'Cost Center',
+cols_to_keep =  ['Fund', 'Fund Name',
+                 'Appropriation', 'Appropriation Name',
+                 'Cost Center', 'Cost Center Name',
                  'Recurring or One-Time', 
                  'Baseline or Supplemental' ]
+
+# columns to be retained from all sheets
+full_cols_to_keep =  ['Fund', 'Fund Name',
+                    'Appropriation', 'Appropriation Name',
+                    'Cost Center', 'Cost Center Name',
+                    'Object', #'Object Name',
+                    'Recurring or One-Time', 
+                    'Baseline or Supplemental' ]
+
+totals = {
+    'FTE, Salary-Wage, & Benefits': 'Budget Recommend Salary/Wage',
+    'Overtime & Other Personnel': ['Budget Recommend OT/SP/Hol', 'Budget Recommend FICA'],
+    'Non-Personnel': 'Budget Recommend Total',
+    'Revenue': 'Budget Recommend Total',
+}
 
 # Sheet names; columns to keep
 SHEETS = {
     'FTE, Salary-Wage, & Benefits': {
-        'cols': cols_to_keep + ['Salary/Wage Total Request (incl. GWI & Merit)',
-                  'Fringe Benefits Package'],
+        'cols': cols_to_keep + ['Fringe Benefits Package'] + [totals['FTE, Salary-Wage, & Benefits']],
         'header': 13
     },  
     'Overtime & Other Personnel': {
-        'cols': cols_to_keep + ['Departmental Request OT/SP/Hol',
-           'FICA Object',
-           'OT/SP/Hol Object'],
+        'cols': cols_to_keep + 
+            ['FICA Object', 'OT/SP/Hol Object', 'Object Name', 'FICA Object Name'] + 
+            totals['Overtime & Other Personnel'],
         'header': 13
     },
     'Non-Personnel': {
-        'cols': cols_to_keep + ['FY26 Departmental Request Total', 'Object'],
+        'cols': full_cols_to_keep + [totals['Non-Personnel']],
         'header': 17
     },
     'Revenue': {
-        'cols': cols_to_keep + ['FY26 Departmental Estimate Total', 'Object'],
+        'cols': full_cols_to_keep + [totals['Revenue']],
         'header': 13
     },
     FRINGE_TAB_NAME: {
@@ -50,15 +63,15 @@ SHEETS = {
 }
 
 def read_master_detail(sheet_filename):
-    # read Excel using pandas
-    xls = pd.ExcelFile(sheet_filename)
 
-    # Read individual sheets into DataFrames
-    dfs = {sheet: pd.read_excel(sheet_filename, sheet_name=sheet, header=SHEETS[sheet]['header']) for sheet in SHEETS}
-    
+    # Read individual sheets (tabs) into DataFrames
+    dfs = {sheet: pd.read_excel(sheet_filename, 
+                                sheet_name=sheet, 
+                                header=SHEETS[sheet]['header']) 
+            for sheet in SHEETS}
+        
     # Separate FY26 Fringe for lookup
     lookup_df = dfs.pop(FRINGE_TAB_NAME)
-    
     return dfs, lookup_df
 
 def clean_column_names(column_names):
@@ -144,6 +157,7 @@ def create_id_column(df, include_columns=None):
     return df
 
 def process_sheet(dfs, sheet_name, fringe_lookup):
+    print(f'Processing {sheet_name}')
     # clean column names
     df = clean_dataframe_columns(dfs[sheet_name])
 
@@ -162,19 +176,25 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
         df = process_personnel(df, fringe_lookup)
 
     # process OT
-    # # TODO fix with FICA objects
-    # if sheet_name == 'Overtime & Other Personnel':
-    #     df.rename(columns={'OT/SP/Hol Object' :'Object'})
+    if sheet_name == 'Overtime & Other Personnel':
+        df = process_OT(df)
 
-    # # ID column
-    # df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
-    #                            'Object',
-    #                           'Recurring or One-Time', 'Baseline or Supplemental'])
+    # Rename total to Amount
+    if ('Amount' not in df.columns):
+        df = df.rename(columns={totals[sheet_name] :'Amount'})
+
+    # ID column
+    df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
+                               'Object',
+                              'Recurring or One-Time', 'Baseline or Supplemental'])
     
-    # # Group by the ID column and sum the "Amount" values
-    # grouped_df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
-
-    # return grouped_df
+    # Create the aggregation dictionary
+    agg_dict = {col: 'first' for col in full_cols_to_keep}
+    agg_dict['Amount'] = 'sum'
+    # Group by the ID column and aggregate using the aggregation dictionary
+    grouped_df = df.groupby('ID', as_index=False).agg(agg_dict)
+    
+    return grouped_df
 
 #================= Process personnel ========================================
 
@@ -186,40 +206,63 @@ def process_personnel(df, fringe_lookup):
         for obj in fringe_lookup.obj_list():
             new_row = row.copy()
             new_row['Object'] = obj
-            rate = fringe_lookup.lookup_fringe(new_row['Fringe Benefits Package'], obj)
+            package = new_row['Fringe Benefits Package']
+            rate = fringe_lookup.lookup_fringe(package, obj)
             new_row['Fringe Rate'] = rate
-            new_row['Amount'] = rate * new_row['Salary/Wage Total Request (incl. GWI & Merit)']
+            new_row['Amount'] = rate * new_row[totals['FTE, Salary-Wage, & Benefits']]
             expanded_rows.append(new_row)
     
     expanded_df = pd.DataFrame(expanded_rows)
+    return expanded_df
 
-    # delete emty rows
-    expanded_df = expanded_df[expanded_df['Amount'] > 0]
 
-    # ID column
-    df = create_id_column(expanded_df, ['Fund', 'Appropriation', 'Cost Center', 
-                               'Object',
-                              'Recurring or One-Time', 'Baseline or Supplemental'])
+def process_OT(df):
+    df.rename(columns={'OT/SP/Hol Object' :'Object'})
+
+    # Expand dataframe so each row becomes a row for each object in FringeLookup.obj_list()
+    expanded_rows = []
+    for _, row in df.iterrows():
+        for obj in ['OT/SP/Hol', 'FICA']:
+            new_row = row.copy()
+            new_row['Object'] = new_row[f'{obj} Object']
+            obj_name_col = f'{'FICA '*(obj == 'FICA')}Object Name'
+            new_row['Object Name'] = new_row[obj_name_col]
+            new_row['Amount'] = new_row[f'Budget Recommend {obj}']
+            expanded_rows.append(new_row)
     
-    # Group by the ID column and sum the "Amount" values
-    #df = df.groupby('ID', as_index=False).agg({'Amount': 'sum'})
-
-    df.to_excel(output_file, index=False)
-
-    return df
+    expanded_df = pd.DataFrame(expanded_rows)
+    return expanded_df
 
 # ==================== Main ==========================================
+
+
+def test():
+    dfs, lookup_df = read_master_detail(master_DS_filepath)
+    # create lookup table
+    fringeLookup = FringeLookup(lookup_df)
+    for obj in fringeLookup.obj_list():
+        rate = fringeLookup.lookup_fringe('General City Civilian', obj)
+        print(f'Obj: {obj}, rate: {rate*100}%') 
 
 def main():
     dfs, lookup_df = read_master_detail(master_DS_filepath)
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
+    dataframes = []
 
-    # print(fringeLookup.lookup_fringe('General City Civilian', 603125))
+    sheets = list(dfs.keys())
+    # process all the dataframes and add them to an array
+    for i in range(len(sheets)):
+        dataframes.append(process_sheet(dfs, sheets[i], fringeLookup))
+    
+    # row bind them
+    df_processed = pd.concat(dataframes, ignore_index=True)
 
-    # process all the dataframes
-    for df_key in dfs:
-        df_processed = process_sheet(dfs, df_key, fringeLookup)
+    # delete emty rows
+    cleaned_df = df_processed[df_processed['Amount'] > 0]
+    
+    # save as excel
+    cleaned_df.to_excel(output_file, index=False)
 
 if __name__ == '__main__':
     main()

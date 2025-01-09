@@ -71,7 +71,7 @@ SHEETS = ['Budget Director Summary', 'Initiatives Summary']
 
 REPLACEMENT_DICT = director_review_replacements
 
-SAVE_TO = 'output/formula_replacements/'
+SAVE_TO = 'output/formula_replacements/backups'
 
 KEY = '(Deputy Budget Director)' #'(Analyst Review)
 
@@ -220,12 +220,16 @@ def create_file_list(verbose = False):
 
     return DS_list
 
-def edit_formulas(file, verbose=False, save_to=False):
+def edit_formulas(file, verbose=False, save_to=False, backup=False):
     # check if it's the police DS
     police = 'Police' in file
 
     # open file 
     wb = load_workbook(file, data_only=False)
+
+    name = file.split('\\')[-1]
+    if(backup):
+        wb.save(f'{SAVE_TO}/{name}')
 
     # make replacements on both dept summary and init summary
     for sheet in SHEETS:
@@ -287,9 +291,9 @@ def test():
     print(replace_all(text))
 
 def main():
-    files = create_file_list()[1:2]
+    files = create_file_list()
     for file in files:
-        edit_formulas(file, save_to=SAVE_TO)
+        edit_formulas(file, backup=SAVE_TO)
 
 if __name__ == '__main__':
     #test()

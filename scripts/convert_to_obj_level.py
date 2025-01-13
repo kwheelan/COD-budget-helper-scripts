@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 import os
+import warnings
 
 # Constants
 YEAR = 26
@@ -11,41 +12,43 @@ DATA = 'input_data'
 OUTPUT = 'output'
 
 master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
-#source_folder = f'{DATA}/detail_sheets'
-#master_DS_filepath = f'{source_folder}/{os.listdir(source_folder)[0]}'
 output_file = f'{OUTPUT}/obj_level.xlsx'
 
-# columns to be retained from all sheets
-cols_to_keep =  ['Fund', 'Fund Name',
-                 'Appropriation', 'Appropriation Name',
-                 'Cost Center', 'Cost Center Name',
-                 'Recurring or One-Time', 
-                 'Baseline or Supplemental' ]
+SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
+
 
 # columns to be retained from all sheets
-full_cols_to_keep =  ['Fund', 'Fund Name',
-                    'Appropriation', 'Appropriation Name',
-                    'Cost Center', 'Cost Center Name',
+cols_to_keep =  ['Fund', #'Fund Name',
+                 'Appropriation', #'Appropriation Name',
+                 'Cost Center', #'Cost Center Name',
+                 'Recurring or One-Time', 
+                 'Baseline or Supplemental']
+
+# columns to be retained from all sheets
+full_cols_to_keep =  ['Fund', #'Fund Name',
+                    'Appropriation', #'Appropriation Name',
+                    'Cost Center', #'Cost Center Name',
                     'Object', #'Object Name',
                     'Recurring or One-Time', 
-                    'Baseline or Supplemental' ]
+                    'Baseline or Supplemental',
+                    'Service']
 
 totals = {
-    'FTE, Salary-Wage, & Benefits': 'Budget Recommend Salary/Wage',
-    'Overtime & Other Personnel': ['Budget Recommend OT/SP/Hol', 'Budget Recommend FICA'],
-    'Non-Personnel': 'Budget Recommend Total',
-    'Revenue': 'Budget Recommend Total',
+    'FTE, Salary-Wage, & Benefits': 'Budget Director Salary/Wage',
+    'Overtime & Other Personnel': ['Budget Director OT/SP/Hol', 'Budget Director FICA'],
+    'Non-Personnel': 'Budget Director Total',
+    'Revenue': 'Budget Director Total',
 }
 
 # Sheet names; columns to keep
 SHEETS = {
     'FTE, Salary-Wage, & Benefits': {
-        'cols': cols_to_keep + ['Fringe Benefits Package'] + [totals['FTE, Salary-Wage, & Benefits']],
+        'cols': cols_to_keep + ['Fringe Benefits Package', 'Service'] + [totals['FTE, Salary-Wage, & Benefits']],
         'header': 13
     },  
     'Overtime & Other Personnel': {
         'cols': cols_to_keep + 
-            ['FICA Object', 'OT/SP/Hol Object', 'Object Name', 'FICA Object Name'] + 
+            ['FICA Object', 'OT/SP/Hol Object', 'Object Name', 'FICA Object Name', 'Service'] + 
             totals['Overtime & Other Personnel'],
         'header': 13
     },
@@ -53,26 +56,66 @@ SHEETS = {
         'cols': full_cols_to_keep + [totals['Non-Personnel']],
         'header': 17
     },
-    'Revenue': {
-        'cols': full_cols_to_keep + [totals['Revenue']],
-        'header': 13
-    },
+    # 'Revenue': {
+    #     'cols': full_cols_to_keep + [totals['Revenue']],
+    #     'header': 13
+    # },
     FRINGE_TAB_NAME: {
         'header': 2
     }
 }
 
-def read_master_detail(sheet_filename):
+def find_DS(folder, keyword='Detail Sheet', exclude=[], verbose=False):
+    # Get full file path
+    folder_fp = os.path.join(SOURCE_FOLDER, folder)
+
+    # grab list of all files in that folder
+    files = os.listdir(folder_fp)
+
+    # generate list of reviewed detail sheets
+    reviewed_DS = []
+    for file in files:
+        if (keyword in file) and ('.xlsx' in file) and not (sum([(word in file) for word in exclude])):
+            reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
+
+    # return message
+    message = None
+    if len(reviewed_DS) > 1:
+        message = f'Multiple potential reviewed detail sheets: {reviewed_DS}'
+    elif len(reviewed_DS) == 0:
+        message = f'No reviewed detail sheet found in {folder}'
+    if verbose and message:
+        print(message)
+
+    return reviewed_DS
+
+def read_DS(sheet_filename):
 
     # Read individual sheets (tabs) into DataFrames
     dfs = {sheet: pd.read_excel(sheet_filename, 
                                 sheet_name=sheet, 
                                 header=SHEETS[sheet]['header']) 
             for sheet in SHEETS}
+    
+    dfs = clean_rows(dfs)
         
     # Separate FY26 Fringe for lookup
     lookup_df = dfs.pop(FRINGE_TAB_NAME)
     return dfs, lookup_df
+
+def clean_rows(dfs):
+    # Process each DataFrame to remove rows with all NaNs or zeros
+    dfs_cleaned = {}
+    for sheet, df in dfs.items():
+        # Drop rows where the 'Fund' column is NaN
+        if 'Fund' in df.columns:
+            cleaned_df = df.dropna(subset=['Fund'])
+        else:
+            print(f"Warning: 'Fund' column not found in {sheet}")
+            cleaned_df = df  # Optionally retain the DataFrame as-is if the 'Fund' column is not found
+        dfs_cleaned[sheet] = cleaned_df
+    return dfs_cleaned
+
 
 def clean_column_names(column_names):
     cleaned_columns = []
@@ -95,6 +138,7 @@ def clean_dataframe_columns(df):
 
 class FringeLookup:
     def __init__(self, df):
+        self._raw = df
         self.df = df
         self.process_fringe_lookup()
 
@@ -134,17 +178,31 @@ class FringeLookup:
         self.df.columns = new_columns
         self.df = self.df.iloc[1:].reset_index(drop=True)
         self.df = self.convert_to_long_format(self.df)
+        self.add_salary_wage()
+
+    def add_salary_wage(self):
+        sal_wag = self._raw.iloc[:10, [29,31]]
+        sal_wage_df = pd.DataFrame( {
+            'Fringe_Package' : 'Salary/Wage',
+            'Type_Name' : sal_wag.iloc[:, 0],
+            'Object_Number' : [str(obj) for obj in sal_wag.iloc[:, 1]],
+            'Rate' : 1.0
+        } )
+        self.df = pd.concat([self.df, sal_wage_df], ignore_index=True)
+
 
     def lookup_fringe(self, package, obj):
+        # Return fringe rate given package and object number
         df = self.df
-        lookup_result = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == str(obj))]
+        lookup_result = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == obj)]
         rate = lookup_result['Rate']
         if not rate.empty:
             return float(rate.iloc[0])  # Ensure it returns a float value
+        #print(f'Could not find rate for package {package} and object {obj}')
         return 0.0
 
     def obj_list(self):
-        return self.df['Object_Number'].unique()
+        return [str(obj) for obj in self.df['Object_Number'].unique()]
 
     def __repr__(self):
         return repr(self.df)
@@ -157,7 +215,9 @@ def create_id_column(df, include_columns=None):
     return df
 
 def process_sheet(dfs, sheet_name, fringe_lookup):
+    
     print(f'Processing {sheet_name}')
+
     # clean column names
     df = clean_dataframe_columns(dfs[sheet_name])
 
@@ -167,9 +227,12 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # Ensure the columns being selected are present in the DataFrame
     missing_cols = [col for col in cols if col not in df.columns]
     if missing_cols:
-        raise KeyError(f"Columns missing in DataFrame: {missing_cols}")
+        raise KeyError(f"Columns missing in {sheet_name}: {missing_cols}")
     # do the subsetting
     df = df.loc[:, cols]
+
+    if df.empty:
+        return df
 
     # process personnel
     if sheet_name == 'FTE, Salary-Wage, & Benefits':
@@ -186,13 +249,20 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # ID column
     df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
                                'Object',
-                              'Recurring or One-Time', 'Baseline or Supplemental'])
+                              'Recurring or One-Time', 'Baseline or Supplemental',
+                              'Service'])
     
     # Create the aggregation dictionary
     agg_dict = {col: 'first' for col in full_cols_to_keep}
     agg_dict['Amount'] = 'sum'
+
     # Group by the ID column and aggregate using the aggregation dictionary
-    grouped_df = df.groupby('ID', as_index=False).agg(agg_dict)
+    try:
+        grouped_df = df.groupby('ID', as_index=False).agg(agg_dict)
+    except Exception as e:
+        print(df)
+        print("Error during group-by or aggregate operation:", e)
+        raise
     
     return grouped_df
 
@@ -219,7 +289,7 @@ def process_personnel(df, fringe_lookup):
 def process_OT(df):
     df.rename(columns={'OT/SP/Hol Object' :'Object'})
 
-    # Expand dataframe so each row becomes a row for each object in FringeLookup.obj_list()
+    # Expand dataframe so each row becomes a row for each object in OT/FICA
     expanded_rows = []
     for _, row in df.iterrows():
         for obj in ['OT/SP/Hol', 'FICA']:
@@ -227,25 +297,14 @@ def process_OT(df):
             new_row['Object'] = new_row[f'{obj} Object']
             obj_name_col = f'{'FICA '*(obj == 'FICA')}Object Name'
             new_row['Object Name'] = new_row[obj_name_col]
-            new_row['Amount'] = new_row[f'Budget Recommend {obj}']
+            new_row['Amount'] = new_row[f'Budget Director {obj}']
             expanded_rows.append(new_row)
     
     expanded_df = pd.DataFrame(expanded_rows)
     return expanded_df
 
-# ==================== Main ==========================================
-
-
-def test():
-    dfs, lookup_df = read_master_detail(master_DS_filepath)
-    # create lookup table
-    fringeLookup = FringeLookup(lookup_df)
-    for obj in fringeLookup.obj_list():
-        rate = fringeLookup.lookup_fringe('General City Civilian', obj)
-        print(f'Obj: {obj}, rate: {rate*100}%') 
-
-def main():
-    dfs, lookup_df = read_master_detail(master_DS_filepath)
+def convert(filename):
+    dfs, lookup_df = read_DS(filename)
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
     dataframes = []
@@ -260,9 +319,79 @@ def main():
 
     # delete emty rows
     cleaned_df = df_processed[df_processed['Amount'] > 0]
-    
+    return cleaned_df
+
+def save_to_excel(df, output_file):
     # save as excel
-    cleaned_df.to_excel(output_file, index=False)
+    df.to_excel(output_file, index=False)
+
+def create_file_list(verbose = False):
+    # all folders in analyst review section
+    DS_FOLDERS = os.listdir(SOURCE_FOLDER)
+
+    # initialize list and add viable files to it
+    DS_list = []
+    for folder in DS_FOLDERS:
+        folder_fp = os.path.join(SOURCE_FOLDER, folder)
+        if(os.path.isdir(folder_fp)):
+            DS_list += find_DS(folder, verbose=verbose, exclude=['Sandbox'])
+
+    return DS_list
+
+def include_dept(file):
+    for dept in INCLUDE:
+        if dept in file:
+            return dept
+    return False
+
+# ==================== Main ==========================================
+
+
+def test():
+    _, lookup_df = read_DS(master_DS_filepath)
+    # create lookup table
+    fringeLookup = FringeLookup(lookup_df)
+    for obj in fringeLookup.obj_list():
+        rate = fringeLookup.lookup_fringe('Uniform Fire', obj)
+        print(f'Obj: {obj}, rate: {rate*100}%') 
+
+INCLUDE = ['BSEED',
+           'DPW',
+           'DDoT',
+           'Fire',
+           'Health',
+           '28 HR',
+           'CRIO',
+           'DoIT',
+           'Mayor',
+           'Parking',
+           'HRD Classic',
+           'HRD JET',
+           'DAH',
+           'GSD',
+           'Elections',
+           'Law',
+           'Police'
+]
+
+def main():
+    warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
+    warnings.filterwarnings("ignore", message=" Print area cannot be set to Defined name")
+
+    #initialize DF
+    df = pd.DataFrame()
+
+    # get list of DS files
+    DS_list = [file for file in create_file_list() if include_dept(file)]
+    for detail_sheet in DS_list:
+        print(f'Processing {detail_sheet}')
+        try:
+            df = pd.concat([df, convert(detail_sheet)], ignore_index=True)
+        except Exception as e:
+            print(f'Error {e} processing {detail_sheet}')
+            continue
+
+    save_to_excel(df, output_file)
 
 if __name__ == '__main__':
     main()

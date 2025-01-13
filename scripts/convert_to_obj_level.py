@@ -314,9 +314,30 @@ def convert(filename):
 
     # delete emty rows
     cleaned_df = df_processed[df_processed['Amount'] > 0]
-    
+    return cleaned_df
+
+def save_to_excel(df, output_file):
     # save as excel
-    cleaned_df.to_excel(output_file, index=False)
+    df.to_excel(output_file, index=False)
+
+def create_file_list(verbose = False):
+    # all folders in analyst review section
+    DS_FOLDERS = os.listdir(SOURCE_FOLDER)
+
+    # initialize list and add viable files to it
+    DS_list = []
+    for folder in DS_FOLDERS:
+        folder_fp = os.path.join(SOURCE_FOLDER, folder)
+        if(os.path.isdir(folder_fp)):
+            DS_list += find_DS(folder, verbose=verbose)
+
+    return DS_list
+
+def include_dept(file):
+    for dept in INCLUDE:
+        if dept in file:
+            return dept
+    return False
 
 # ==================== Main ==========================================
 
@@ -329,10 +350,38 @@ def test():
         rate = fringeLookup.lookup_fringe('Uniform Fire', obj)
         print(f'Obj: {obj}, rate: {rate*100}%') 
 
+INCLUDE = ['BSEED',
+        #    'DPW',
+        #    'DDoT',
+        #    'Fire',
+           'Health',
+        #    'HR',
+        #    'CRIO',
+        #    'DoIT',
+        #    'Mayor',
+        #    'Parking',
+        #    'HRD Classic',
+        #    'HRD JET',
+        #    'DAH',
+        #    'GSD',
+        #    'Elections',
+        #    'Law',
+        #    'Police'
+]
+
 def main():
     warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
-    file = find_DS('50 - OAG')[0]
-    convert(file)
+    warnings.filterwarnings("ignore", message=" Print area cannot be set to Defined name")
+
+    #initialize DF
+    df = pd.DataFrame()
+
+    # get list of DS files
+    DS_list = [file for file in create_file_list() if include_dept(file)]
+    for detail_sheet in DS_list:
+        print(f'Processing {detail_sheet}')
+        df = pd.concat([df, convert(detail_sheet)], ignore_index=True)
+    save_to_excel(df, output_file)
 
 if __name__ == '__main__':
     main()

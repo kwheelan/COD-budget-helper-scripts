@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 import os
+import warnings
 
 # Constants
 YEAR = 26
@@ -137,6 +138,7 @@ def clean_dataframe_columns(df):
 
 class FringeLookup:
     def __init__(self, df):
+        self._raw = df
         self.df = df
         self.process_fringe_lookup()
 
@@ -176,17 +178,31 @@ class FringeLookup:
         self.df.columns = new_columns
         self.df = self.df.iloc[1:].reset_index(drop=True)
         self.df = self.convert_to_long_format(self.df)
+        self.add_salary_wage()
+
+    def add_salary_wage(self):
+        sal_wag = self._raw.iloc[:10, [29,31]]
+        sal_wage_df = pd.DataFrame( {
+            'Fringe_Package' : 'Salary/Wage',
+            'Type_Name' : sal_wag.iloc[:, 0],
+            'Object_Number' : [str(obj) for obj in sal_wag.iloc[:, 1]],
+            'Rate' : 1.0
+        } )
+        self.df = pd.concat([self.df, sal_wage_df], ignore_index=True)
+
 
     def lookup_fringe(self, package, obj):
+        # Return fringe rate given package and object number
         df = self.df
-        lookup_result = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == str(obj))]
+        lookup_result = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == obj)]
         rate = lookup_result['Rate']
         if not rate.empty:
             return float(rate.iloc[0])  # Ensure it returns a float value
+        #print(f'Could not find rate for package {package} and object {obj}')
         return 0.0
 
     def obj_list(self):
-        return self.df['Object_Number'].unique()
+        return [str(obj) for obj in self.df['Object_Number'].unique()]
 
     def __repr__(self):
         return repr(self.df)
@@ -228,7 +244,8 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # ID column
     df = create_id_column(df, ['Fund', 'Appropriation', 'Cost Center', 
                                'Object',
-                              'Recurring or One-Time', 'Baseline or Supplemental'])
+                              'Recurring or One-Time', 'Baseline or Supplemental',
+                              'Service'])
     
     # Create the aggregation dictionary
     agg_dict = {col: 'first' for col in full_cols_to_keep}
@@ -267,7 +284,7 @@ def process_personnel(df, fringe_lookup):
 def process_OT(df):
     df.rename(columns={'OT/SP/Hol Object' :'Object'})
 
-    # Expand dataframe so each row becomes a row for each object in FringeLookup.obj_list()
+    # Expand dataframe so each row becomes a row for each object in OT/FICA
     expanded_rows = []
     for _, row in df.iterrows():
         for obj in ['OT/SP/Hol', 'FICA']:
@@ -309,13 +326,13 @@ def test():
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
     for obj in fringeLookup.obj_list():
-        rate = fringeLookup.lookup_fringe('General City Civilian', obj)
+        rate = fringeLookup.lookup_fringe('Uniform Fire', obj)
         print(f'Obj: {obj}, rate: {rate*100}%') 
 
 def main():
-    file = find_DS('50 - OAG')
-    print(file)
-    convert(file[0])
+    warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
+    file = find_DS('50 - OAG')[0]
+    convert(file)
 
 if __name__ == '__main__':
     main()

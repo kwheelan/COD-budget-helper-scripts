@@ -334,7 +334,7 @@ def create_file_list(verbose = False):
     for folder in DS_FOLDERS:
         folder_fp = os.path.join(SOURCE_FOLDER, folder)
         if(os.path.isdir(folder_fp)):
-            DS_list += find_DS(folder, verbose=verbose)
+            DS_list += find_DS(folder, verbose=verbose, exclude=['Sandbox'])
 
     return DS_list
 
@@ -356,22 +356,22 @@ def test():
         print(f'Obj: {obj}, rate: {rate*100}%') 
 
 INCLUDE = ['BSEED',
-        #    'DPW',
-        #    'DDoT',
-        #    'Fire',
-        #    'Health',
+           'DPW',
+           'DDoT',
+           'Fire',
+           'Health',
            '28 HR',
-        #    'CRIO',
-        #    'DoIT',
-        #    'Mayor',
-        #    'Parking',
-        #    'HRD Classic',
-        #    'HRD JET',
-        #    'DAH',
-        #    'GSD',
-        #    'Elections',
-        #    'Law',
-        #    'Police'
+           'CRIO',
+           'DoIT',
+           'Mayor',
+           'Parking',
+           'HRD Classic',
+           'HRD JET',
+           'DAH',
+           'GSD',
+           'Elections',
+           'Law',
+           'Police'
 ]
 
 def main():
@@ -385,7 +385,12 @@ def main():
     DS_list = [file for file in create_file_list() if include_dept(file)]
     for detail_sheet in DS_list:
         print(f'Processing {detail_sheet}')
-        df = pd.concat([df, convert(detail_sheet)], ignore_index=True)
+        try:
+            df = pd.concat([df, convert(detail_sheet)], ignore_index=True)
+        except Exception as e:
+            print(f'Error {e} processing {detail_sheet}')
+            continue
+
     save_to_excel(df, output_file)
 
 if __name__ == '__main__':

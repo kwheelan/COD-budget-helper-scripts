@@ -215,7 +215,9 @@ def create_id_column(df, include_columns=None):
     return df
 
 def process_sheet(dfs, sheet_name, fringe_lookup):
+    
     print(f'Processing {sheet_name}')
+
     # clean column names
     df = clean_dataframe_columns(dfs[sheet_name])
 
@@ -228,6 +230,9 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
         raise KeyError(f"Columns missing in {sheet_name}: {missing_cols}")
     # do the subsetting
     df = df.loc[:, cols]
+
+    if df.empty:
+        return df
 
     # process personnel
     if sheet_name == 'FTE, Salary-Wage, & Benefits':
@@ -354,8 +359,8 @@ INCLUDE = ['BSEED',
         #    'DPW',
         #    'DDoT',
         #    'Fire',
-           'Health',
-        #    'HR',
+        #    'Health',
+           '28 HR',
         #    'CRIO',
         #    'DoIT',
         #    'Mayor',

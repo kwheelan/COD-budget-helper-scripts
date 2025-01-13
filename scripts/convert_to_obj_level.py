@@ -13,13 +13,15 @@ OUTPUT = 'output'
 master_DS_filepath = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 output_file = f'{OUTPUT}/obj_level.xlsx'
 
+SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
+
+
 # columns to be retained from all sheets
 cols_to_keep =  ['Fund', #'Fund Name',
                  'Appropriation', #'Appropriation Name',
                  'Cost Center', #'Cost Center Name',
                  'Recurring or One-Time', 
-                 'Baseline or Supplemental',
-                 'Service' ]
+                 'Baseline or Supplemental']
 
 # columns to be retained from all sheets
 full_cols_to_keep =  ['Fund', #'Fund Name',
@@ -31,21 +33,21 @@ full_cols_to_keep =  ['Fund', #'Fund Name',
                     'Service']
 
 totals = {
-    'FTE, Salary-Wage, & Benefits': 'Budget Recommend Salary/Wage',
-    'Overtime & Other Personnel': ['Budget Recommend OT/SP/Hol', 'Budget Recommend FICA'],
-    'Non-Personnel': 'Budget Recommend Total',
-    'Revenue': 'Budget Recommend Total',
+    'FTE, Salary-Wage, & Benefits': 'Budget Director Salary/Wage',
+    'Overtime & Other Personnel': ['Budget Director OT/SP/Hol', 'Budget Director FICA'],
+    'Non-Personnel': 'Budget Director Total',
+    'Revenue': 'Budget Director Total',
 }
 
 # Sheet names; columns to keep
 SHEETS = {
     'FTE, Salary-Wage, & Benefits': {
-        'cols': cols_to_keep + ['Fringe Benefits Package'] + [totals['FTE, Salary-Wage, & Benefits']],
+        'cols': cols_to_keep + ['Fringe Benefits Package', 'Service'] + [totals['FTE, Salary-Wage, & Benefits']],
         'header': 13
     },  
     'Overtime & Other Personnel': {
         'cols': cols_to_keep + 
-            ['FICA Object', 'OT/SP/Hol Object', 'Object Name', 'FICA Object Name'] + 
+            ['FICA Object', 'OT/SP/Hol Object', 'Object Name', 'FICA Object Name', 'Service'] + 
             totals['Overtime & Other Personnel'],
         'header': 13
     },
@@ -53,14 +55,38 @@ SHEETS = {
         'cols': full_cols_to_keep + [totals['Non-Personnel']],
         'header': 17
     },
-    'Revenue': {
-        'cols': full_cols_to_keep + [totals['Revenue']],
-        'header': 13
-    },
+    # 'Revenue': {
+    #     'cols': full_cols_to_keep + [totals['Revenue']],
+    #     'header': 13
+    # },
     FRINGE_TAB_NAME: {
         'header': 2
     }
 }
+
+def find_DS(folder, keyword='Detail Sheet', exclude=[], verbose=False):
+    # Get full file path
+    folder_fp = os.path.join(SOURCE_FOLDER, folder)
+
+    # grab list of all files in that folder
+    files = os.listdir(folder_fp)
+
+    # generate list of reviewed detail sheets
+    reviewed_DS = []
+    for file in files:
+        if (keyword in file) and ('.xlsx' in file) and not (sum([(word in file) for word in exclude])):
+            reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
+
+    # return message
+    message = None
+    if len(reviewed_DS) > 1:
+        message = f'Multiple potential reviewed detail sheets: {reviewed_DS}'
+    elif len(reviewed_DS) == 0:
+        message = f'No reviewed detail sheet found in {folder}'
+    if verbose and message:
+        print(message)
+
+    return reviewed_DS
 
 def read_DS(sheet_filename):
 
@@ -69,10 +95,26 @@ def read_DS(sheet_filename):
                                 sheet_name=sheet, 
                                 header=SHEETS[sheet]['header']) 
             for sheet in SHEETS}
+    
+    dfs = clean_rows(dfs)
         
     # Separate FY26 Fringe for lookup
     lookup_df = dfs.pop(FRINGE_TAB_NAME)
     return dfs, lookup_df
+
+def clean_rows(dfs):
+    # Process each DataFrame to remove rows with all NaNs or zeros
+    dfs_cleaned = {}
+    for sheet, df in dfs.items():
+        # Drop rows where the 'Fund' column is NaN
+        if 'Fund' in df.columns:
+            cleaned_df = df.dropna(subset=['Fund'])
+        else:
+            print(f"Warning: 'Fund' column not found in {sheet}")
+            cleaned_df = df  # Optionally retain the DataFrame as-is if the 'Fund' column is not found
+        dfs_cleaned[sheet] = cleaned_df
+    return dfs_cleaned
+
 
 def clean_column_names(column_names):
     cleaned_columns = []
@@ -167,7 +209,7 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # Ensure the columns being selected are present in the DataFrame
     missing_cols = [col for col in cols if col not in df.columns]
     if missing_cols:
-        raise KeyError(f"Columns missing in DataFrame: {missing_cols}")
+        raise KeyError(f"Columns missing in {sheet_name}: {missing_cols}")
     # do the subsetting
     df = df.loc[:, cols]
 
@@ -191,8 +233,14 @@ def process_sheet(dfs, sheet_name, fringe_lookup):
     # Create the aggregation dictionary
     agg_dict = {col: 'first' for col in full_cols_to_keep}
     agg_dict['Amount'] = 'sum'
+
     # Group by the ID column and aggregate using the aggregation dictionary
-    grouped_df = df.groupby('ID', as_index=False).agg(agg_dict)
+    try:
+        grouped_df = df.groupby('ID', as_index=False).agg(agg_dict)
+    except Exception as e:
+        print(df)
+        print("Error during group-by or aggregate operation:", e)
+        raise
     
     return grouped_df
 
@@ -227,7 +275,7 @@ def process_OT(df):
             new_row['Object'] = new_row[f'{obj} Object']
             obj_name_col = f'{'FICA '*(obj == 'FICA')}Object Name'
             new_row['Object Name'] = new_row[obj_name_col]
-            new_row['Amount'] = new_row[f'Budget Recommend {obj}']
+            new_row['Amount'] = new_row[f'Budget Director {obj}']
             expanded_rows.append(new_row)
     
     expanded_df = pd.DataFrame(expanded_rows)
@@ -265,7 +313,9 @@ def test():
         print(f'Obj: {obj}, rate: {rate*100}%') 
 
 def main():
-    convert(master_DS_filepath)
+    file = find_DS('50 - OAG')
+    print(file)
+    convert(file[0])
 
 if __name__ == '__main__':
     main()

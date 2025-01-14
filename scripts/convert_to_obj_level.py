@@ -142,30 +142,41 @@ class FringeLookup:
         self.df = df
         self.process_fringe_lookup()
 
+    def fix_fringe_package(self, input):
+        for i in range(len(input)):
+            value = input[i]
+            if 'FICA' in value:
+                input[i] = 'TASS / Part-Time (FICA Only)'
+            if '36th District Judges' in value:
+                input[i] =  '36th District Judges'
+            if '36th District Staff' in value:
+                input[i] =  '36th District Staff'
+        return input
+
     def convert_to_long_format(self, df):
-        id_vars = ['Fringe_Package']
-        value_vars = [col for col in df.columns if col != 'Fringe_Package']
+        id_vars = ['Fringe_Obj']
+        value_vars = [col for col in df.columns if col != 'Fringe_Obj']
         
         df_long = pd.melt(df, id_vars=id_vars, value_vars=value_vars, 
                          var_name='Type', value_name='Value')
         
-        df_long[['Type_Name', 'Variable']] = df_long['Type'].str.rsplit('_', n=1, expand=True)
-        
-        df_long = df_long.pivot_table(index=['Fringe_Package', 'Type_Name'], 
+        df_long[['Fringe_Package', 'Variable']] = df_long['Type'].str.rsplit('_', n=1, expand=True)        
+        df_long = df_long.pivot_table(index=['Fringe_Obj', 'Fringe_Package'], 
                                      columns='Variable', values='Value', 
-                                     aggfunc='first').reset_index()
-        
+                                     aggfunc='first').reset_index()        
         df_long.columns.name = None
         df_long = df_long.rename(columns={'object': 'Object_Number', 'rate': 'Rate'})
         df_long['Object_Number'] = df_long['Object_Number'].astype(str)
-
+        
+        # correct inconsistent names for fringe packages
+        df_long['Fringe_Package'] = self.fix_fringe_package(df_long['Fringe_Package'])
         return df_long
 
     def process_fringe_lookup(self):
         self.df = self.df.iloc[:, 1:22]
 
         original_columns = self.df.columns.tolist()
-        new_columns = ['Fringe_Package']
+        new_columns = ['Fringe_Obj']
         
         for i in range(1, len(original_columns), 2):
             base_name = original_columns[i].replace("\n", " ").replace("  ", " ").strip()
@@ -179,12 +190,13 @@ class FringeLookup:
         self.df = self.df.iloc[1:].reset_index(drop=True)
         self.df = self.convert_to_long_format(self.df)
         self.add_salary_wage()
+        print(self.df['Fringe_Package'].unique())
 
     def add_salary_wage(self):
-        sal_wag = self._raw.iloc[:10, [29,31]]
+        sal_wag = self._raw.iloc[:11, [29,31]]
         sal_wage_df = pd.DataFrame( {
-            'Fringe_Package' : 'Salary/Wage',
-            'Type_Name' : sal_wag.iloc[:, 0],
+            'Fringe_Obj' : 'Salary/Wage',
+            'Fringe_Package' : sal_wag.iloc[:, 0],
             'Object_Number' : [str(obj) for obj in sal_wag.iloc[:, 1]],
             'Rate' : 1.0
         } )
@@ -194,7 +206,7 @@ class FringeLookup:
     def lookup_fringe(self, package, obj):
         # Return fringe rate given package and object number
         df = self.df
-        lookup_result = df.loc[(df['Type_Name'] == package) & (df['Object_Number'] == obj)]
+        lookup_result = df.loc[(df['Fringe_Package'] == package) & (df['Object_Number'] == obj)]
         rate = lookup_result['Rate']
         if not rate.empty:
             return float(rate.iloc[0])  # Ensure it returns a float value
@@ -352,7 +364,7 @@ def test():
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
     for obj in fringeLookup.obj_list():
-        rate = fringeLookup.lookup_fringe('Uniform Fire', obj)
+        rate = fringeLookup.lookup_fringe('TASS / Part-Time (FICA Only)', obj)
         print(f'Obj: {obj}, rate: {rate*100}%') 
 
 INCLUDE = ['BSEED',
@@ -394,4 +406,4 @@ def main():
     save_to_excel(df, output_file)
 
 if __name__ == '__main__':
-    main()
+    test()

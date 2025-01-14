@@ -79,22 +79,23 @@ def move_data(detail_sheet, destination_file):
     destination_wb = load_workbook(destination_file, data_only=False)
 
     for sheet in SHEETS:
-        source_ws_formulas = source_wb_formulas[sheet]
-        dest_ws = destination_wb[sheet]
-        config = SHEETS[sheet]
+        if sheet in source_wb_formulas.sheetnames:
+            source_ws_formulas = source_wb_formulas[sheet]
+            dest_ws = destination_wb[sheet]
+            config = SHEETS[sheet]
 
-        # Determine the starting row in the destination sheet for pasting data
-        dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
-        source_row_end = last_data_row(source_ws_formulas, n_header_rows=config['start_row']) + 1
-        
-        # Copy formula columns
-        copy_cols(source_ws_formulas, dest_ws, config['cols'], 
-                  source_row_start=config['start_row'], 
-                  destination_row_start=dest_start_row,
-                  source_row_end=source_row_end)
-        
-        name = detail_sheet.split('\\')[-1]
-        print(f'Copied {sheet} data from {name}.')
+            # Determine the starting row in the destination sheet for pasting data
+            dest_start_row = last_data_row(dest_ws, config['start_row']) + 1
+            source_row_end = last_data_row(source_ws_formulas, n_header_rows=config['start_row']) + 1
+            
+            # Copy formula columns
+            copy_cols(source_ws_formulas, dest_ws, config['cols'], 
+                    source_row_start=config['start_row'], 
+                    destination_row_start=dest_start_row,
+                    source_row_end=source_row_end)
+            
+            name = detail_sheet.split('\\')[-1]
+            print(f'Copied {sheet} data from {name}.')
 
     destination_wb.save(destination_file)
 

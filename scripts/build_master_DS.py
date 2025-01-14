@@ -19,7 +19,7 @@ DATA = 'input_data'
 OUTPUT = 'output'
 template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
 #source_folder = f'{DATA}/detail_sheets_analyst_review'
-SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
+SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 
 # Sheet name, columns to copy, start row
@@ -42,27 +42,27 @@ SHEETS = {
 SUMMARY_SECTIONS = {
     'FTE' : {
         'tab' : 'FTE, Salary-Wage, & Benefits',
-        'count_col' : 'AO',
+        'count_col' : 'AZ',
         'baseline_col' : 'L'
     }, 
     'Salary & Benefits' : {
         'tab' : 'FTE, Salary-Wage, & Benefits',
-        'count_col': 'AR',
+        'count_col': 'BC',
         'baseline_col' : 'L'
     }, 
     'Non-Personnel' : {
         'tab' : 'Non-Personnel',
-        'count_col': 'AD',
+        'count_col': 'AG',
         'baseline_col' : 'O'
     }, 
     'Overtime' : {
         'tab' : 'Overtime & Other Personnel',
-        'count_col': 'AC',
+        'count_col': 'AM',
         'baseline_col' : 'N'
     }, 
     'Revenue' : {
         'tab' : 'Revenue',
-        'count_col': 'Z',
+        'count_col': 'AD',
         'baseline_col' : 'P'
     }}
 
@@ -199,7 +199,7 @@ def find_DS(folder, verbose = False):
     # generate list of reviewed detail sheets
     reviewed_DS = []
     for file in files:
-        if ('(Analyst Review)' in file or 'Library' in file) and '.xlsx' in file:
+        if ('(Deputy Budget Director)' in file) and '.xlsx' in file:
             reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
 
     # return message

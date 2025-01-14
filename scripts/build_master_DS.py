@@ -22,21 +22,19 @@ template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
 SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08. Analyst Review/'
 dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
 
-INCLUDE = ['Airport'] #, 'Fire', 'HRD']
-
 # Sheet name, columns to copy, start row
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
-        'cols' : col_range('A', 'AT'), # extra column for Police
+        'cols' : col_range('A', 'BE'), # extra column for analyst notes (at least in HR DS)
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
-        'cols' : col_range('A', 'AF'),
+        'cols' : col_range('A', 'AN'),
         'start_row' : 15 },
     'Non-Personnel' : {
-        'cols' : col_range('A', 'AE'),
+        'cols' : col_range('A', 'AH'),
         'start_row' : 19 },
     'Revenue' : {
-        'cols' : col_range('A', 'AA'),
+        'cols' : col_range('A', 'AE'),
         'start_row' : 15 }
 }
 
@@ -247,6 +245,37 @@ def main():
     create_summary(dest_file)
     print("Created summary tab")
 
+INCLUDE = [
+    'Airport',
+    'BSEED',
+    '16 CDD',
+    '18 DSLP',
+    '19 DPW',
+    '20 DDoT',
+    '24 Fire',
+    '25 Health',
+    '28 HR',
+    '29 CRIO'
+    '31 DoIT',
+    '32 Law',
+    '33 Mayor',
+    '34 Parking',
+    '35 Non-Dept',
+    '36 HRD Classic',
+    '36 HRD JET Team',
+    '38 PLD',
+    '43 PDD',
+    '45 DAH',
+    '47 GSD',
+    '50 OAG',
+    '51 BZA',
+    '52 Council',
+    '53 Ombuds',
+    '54 OIG',
+    '60 36D',
+    '70 Clerk',
+    '71 Elections'
+]
 
 if __name__ == '__main__':
     main()

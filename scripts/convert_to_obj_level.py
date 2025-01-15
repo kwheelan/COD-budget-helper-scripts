@@ -18,14 +18,17 @@ SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents -
 
 
 # columns to be retained from all sheets
-cols_to_keep =  ['Fund', #'Fund Name',
+cols_to_keep =  ['Department',
+                'Fund', #'Fund Name',
                  'Appropriation', #'Appropriation Name',
                  'Cost Center', #'Cost Center Name',
                  'Recurring or One-Time', 
                  'Baseline or Supplemental']
 
 # columns to be retained from all sheets
-full_cols_to_keep =  ['Fund', #'Fund Name',
+full_cols_to_keep =  [
+                    'Department',
+                    'Fund', #'Fund Name',
                     'Appropriation', #'Appropriation Name',
                     'Cost Center', #'Cost Center Name',
                     'Object', #'Object Name',
@@ -96,6 +99,12 @@ def read_DS(sheet_filename):
                                 sheet_name=sheet, 
                                 header=SHEETS[sheet]['header']) 
             for sheet in SHEETS}
+    
+    # # Convert all float columns to int, if possible
+    # for df in dfs.items():
+    #     for col in df.select_dtypes(include=['float', 'int']).columns:
+    #         # Convert column to integers (you can handle missing values here as needed)
+    #         df[col] = df[col].astype('Int64')  # Int64 supports NaN values
     
     dfs = clean_rows(dfs)
         
@@ -190,7 +199,6 @@ class FringeLookup:
         self.df = self.df.iloc[1:].reset_index(drop=True)
         self.df = self.convert_to_long_format(self.df)
         self.add_salary_wage()
-        print(self.df['Fringe_Package'].unique())
 
     def add_salary_wage(self):
         sal_wag = self._raw.iloc[:11, [29,31]]
@@ -223,7 +231,7 @@ class FringeLookup:
 def create_id_column(df, include_columns=None):
     if include_columns is not None:
         df = df.copy()  # Avoid modifying the original DataFrame
-        df['ID'] = df[include_columns].apply(lambda row: '-'.join(row.values.astype(str)), axis=1)
+        df['ID'] = df[include_columns].apply(lambda row: '-'.join(row.values.astype(str)).replace('.0',''), axis=1)
     return df
 
 def process_sheet(dfs, sheet_name, fringe_lookup):
@@ -364,13 +372,13 @@ def test():
     # create lookup table
     fringeLookup = FringeLookup(lookup_df)
     for obj in fringeLookup.obj_list():
-        rate = fringeLookup.lookup_fringe('TASS / Part-Time (FICA Only)', obj)
+        rate = fringeLookup.lookup_fringe('DDoT', obj)
         print(f'Obj: {obj}, rate: {rate*100}%') 
 
 INCLUDE = ['BSEED',
            'DPW',
-           'DDoT',
-           'Fire',
+           #'DDoT',
+           #'Fire',
            'Health',
            '28 HR',
            'CRIO',
@@ -383,7 +391,7 @@ INCLUDE = ['BSEED',
            'GSD',
            'Elections',
            'Law',
-           'Police'
+           #'Police'
 ]
 
 def main():
@@ -406,4 +414,4 @@ def main():
     save_to_excel(df, output_file)
 
 if __name__ == '__main__':
-    test()
+    main()

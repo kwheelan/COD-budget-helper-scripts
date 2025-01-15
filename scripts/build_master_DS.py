@@ -231,6 +231,13 @@ def include_dept(file):
             return dept
     return False
 
+def exclude_dept(file):
+    for dept in EXCLUDE:
+        if dept in file:
+            return dept
+    return False
+
+
 
 #================== Program on run ============================================
 
@@ -239,7 +246,7 @@ def main():
     shutil.copy(template_file, dest_file)
 
     # get list of DS files
-    DS_list = [file for file in create_file_list() if include_dept(file)]
+    DS_list = [file for file in create_file_list() if not exclude_dept(file)]
     for detail_sheet in DS_list:
         load_workbook(detail_sheet)
         move_data(detail_sheet, dest_file)
@@ -276,6 +283,11 @@ INCLUDE = [
     '60 36D',
     '70 Clerk',
     '71 Elections'
+]
+
+EXCLUDE = [
+    '23 OCFO',
+    '72 Library'
 ]
 
 if __name__ == '__main__':

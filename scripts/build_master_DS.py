@@ -1,5 +1,6 @@
 """
-K. Wheelan October 2024
+K. Wheelan
+Updated Feb 2025
 
 Iterate through each file in detail_sheets,
  copy to the master DS file and save it
@@ -199,7 +200,7 @@ def find_DS(folder, verbose = False):
     # generate list of reviewed detail sheets
     reviewed_DS = []
     for file in files:
-        if ('(Deputy Budget Director)' in file) and '.xlsx' in file:
+        if ('Budget Director' in file) and '.xlsx' in file:
             reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
 
     # return message
@@ -247,47 +248,48 @@ def main():
 
     # get list of DS files
     DS_list = [file for file in create_file_list() if not exclude_dept(file)]
+    # DS_list = [file for file in create_file_list() if include_dept(file)]
     for detail_sheet in DS_list:
-        load_workbook(detail_sheet)
         move_data(detail_sheet, dest_file)
     create_summary(dest_file)
     print("Created summary tab")
 
 INCLUDE = [
-    'Airport',
-    'BSEED',
-    '16 CDD',
-    '18 DSLP',
-    '19 DPW',
-    '20 DDoT',
-    '24 Fire',
-    '25 Health',
-    '28 HR',
-    '29 CRIO'
-    '31 DoIT',
-    '32 Law',
-    '33 Mayor',
-    '34 Parking',
-    '35 Non-Dept',
+    # 'Airport',
+    # 'BSEED',
+    # '16 CDD',
+    # '18 DSLP',
+    # '19 DPW',
+    #'20 DDoT',
+    # '24 Fire',
+    # '25 Health',
+    # '28 HR',
+    # '29 CRIO'
+    # '31 DoIT',
+    # '32 Law',
+    # '33 Mayor',
+    # '34 Parking',
+    # '35 Non-Dept',
     '36 HRD Classic',
-    '36 HRD JET Team',
-    '38 PLD',
-    '43 PDD',
-    '45 DAH',
-    '47 GSD',
-    '50 OAG',
-    '51 BZA',
-    '52 Council',
-    '53 Ombuds',
-    '54 OIG',
-    '60 36D',
-    '70 Clerk',
-    '71 Elections'
+    # '36 HRD JET Team',
+    # '38 PLD',
+    # '43 PDD',
+    # '45 DAH',
+    # '47 GSD',
+    # '50 OAG',
+    # '51 BZA',
+    # '52 Council',
+    # '53 Ombuds',
+    # '54 OIG',
+    #  '60 36',
+    # '70 City Clerk',
+    # '71 Elections'
 ]
 
 EXCLUDE = [
+    # '18 DSLP',
     '23 OCFO',
-    '72 Library'
+    # '72 Library'
 ]
 
 if __name__ == '__main__':

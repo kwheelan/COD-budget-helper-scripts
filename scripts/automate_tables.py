@@ -22,25 +22,36 @@ SHEETS_TO_LOAD = [
 
 # ======================= Classes ========================================
 
-class Budget_Table():
+class Budget_Table:
     def __init__(self, df):
-        # fix hard-coding
         # Extract data
         self.table_data = df.iloc[6:44, 1:10]
         # Get headers
-        self.topline_header = df.iloc[0,1]
-        self.other_header_lines = [df.iloc[i,1] for i in range(2,5)]
+        self.topline_header = df.iloc[0, 1]
+        self.other_header_lines = [df.iloc[i, 1] for i in range(2, 5)]
         self.clean_nas()
+        self.escape_ampersands_in_table_data()
 
     def clean_nas(self):
         self.table_data.fillna('', inplace=True)
 
+    def escape_ampersands_in_table_data(self):
+        # Apply the escaping function to each element in the DataFrame
+        self.table_data = self.table_data.applymap(self.escape_ampersands)
+
+    @staticmethod
+    def escape_ampersands(text):
+        # Replace & with \& in all string elements
+        if isinstance(text, str):
+            return text.replace("&", r"\&")
+        return text
+
     def get_table_data(self):
         return self.table_data
-    
+
     def main(self):
         return self.topline_header
-    
+
     def subheaders(self):
         return self.other_header_lines
 
@@ -65,7 +76,12 @@ def create_latex_doc(table):
     with doc.create(Section('Section A')):
         with doc.create(Subsection('FTE')):
             with doc.create(Table(position='htbp!')):  # More flexible positioning
-                doc.append(table.main())
+                # Main header
+                doc.append(NoEscape(r'\begin{center}'))
+                doc.append(NoEscape(rf'\underline{{{table.main()}}}'))
+                doc.append(NoEscape(r'\end{center}'))
+
+                # Table
                 doc.append(NoEscape(r"""
                     \renewcommand{\arraystretch}{1.3}  % Increase the row height
                     \setlength{\tabcolsep}{8pt}        % Add padding

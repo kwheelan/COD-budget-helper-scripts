@@ -1,0 +1,31 @@
+"""
+Data utils for cleaning text and values in a dataframe
+
+RIGHT NOW DUPLICATED
+"""
+
+def escape_ampersands(text):
+    # Replace & with \& in all string elements
+    if isinstance(text, str):
+        return text.replace('&', r'\&')
+    return text
+
+def remove_new_lines(text):
+    # Replace & with \& in all string elements
+    if isinstance(text, str):
+        return text.replace('\n', ' ').replace('  ', ' ')
+    return text
+
+def round_floats(value):
+    if isinstance(value, float) or isinstance(value, int):
+        # avoid float imprecision errors
+        value = round(value, 3)
+        if value % 1 == 0:
+            # then just add comma
+            return f'{value:,.0f}'
+        if round(value,1) == value:
+            # then round to one decimal
+            return f'{value:,.1f}'
+        # otherwise, round to 2 places
+        return f'{value:,.2f}'
+    return value

@@ -16,19 +16,20 @@ filepath = os.path.join(DATA, file)
 OUTPUT = 'output/budget_book/'
 
 SHEETS_TO_LOAD = [
-    'Section A FTE'
+    'Section A FTE',
+    'Section B Dept Packet'
 ]
 
 # ======================= Classes ========================================
 
 class Budget_Table:
-    def __init__(self, df):
+    def __init__(self, df, start_row=6, end_row=44, start_col=1, end_col=11):
         # Extract data
-        self.table_data = df.iloc[6:44, 1:10]
+        self.table_data = df.iloc[start_row:end_row, start_col:end_col]
         self.adjust_headers()
         # Get headers
         self.topline_header = df.iloc[0, 1]
-        self.other_header_lines = [df.iloc[i, 1] for i in range(2, 5)]
+        self.other_header_lines = [df.iloc[i, start_col] for i in range(1, 5) if type(df.iloc[i, start_col]) is str]
         self.clean_table_data()
 
     def clean_nas(self):
@@ -93,13 +94,35 @@ class Budget_Table:
     def subheaders(self):
         return self.other_header_lines
 
+class DeptTable(Budget_Table):
+    def __init__(self, df, start_row = 9, end_row=18, start_col=1, end_col=7):
+        super().__init__(df, start_row, end_row, start_col, end_col)
+
+    def adjust_headers(self):
+        # Adjust column names
+        self.table_data.columns = self.table_data.iloc[0]
+        columns_list = ['Summary Category', 'FY2025 Adopted', 'FY2026 Adopted',
+                        'FY2027 Forecast', 'FY2028 Forecast', 'FY2029 Forecast']
+        # remove extra spaces or new lines
+        for i in range(len(columns_list)): 
+            columns_list[i] = columns_list[i].strip().replace('\n','')
+        # Drop column names row from data and reset
+        self.table_data.columns = columns_list
+        self.table_data = self.table_data[1:].reset_index(drop=True) 
+
+class RevTable(DeptTable):
+    def __init__(self, df, start_row = 9, end_row=15, start_col=10, end_col=16):
+        super().__init__(df, start_row, end_row, start_col, end_col)
+
+
+
 # ======================= Functions =======================================
 
 def dataframe_to_latex_custom(df):
     # Convert the DataFrame to LaTeX with custom formatting for bold headers
     
     # Define custom column widths
-    column_format = r'|>{\centering\arraybackslash}p{2.5cm}|' + 'p{0.5cm}|' + 'p{3cm}|' + r'>{\centering\arraybackslash}p{1.5cm}|' * (len(df.columns) - 3)
+    column_format = r'|>{\centering\arraybackslash}p{2.5cm}|' + 'p{0.5cm}|' + 'p{2.75cm}|' + r'>{\centering\arraybackslash}p{1.25cm}|' * (len(df.columns) - 3)
     
     latex_code = df.to_latex(
         index=False, 
@@ -174,13 +197,13 @@ def dataframe_to_latex_custom(df):
             first_line = [
                 r'\multirow[c]{' + str(rowspan) + '}{=}{\centering ' + first_cell + '} & ' + ' & '.join(block[0][1:])
             ]
-            formatted_rows.append(''.join(first_line) + r' \\ \cline{2-9}')  # Add cline to the first row
+            formatted_rows.append(''.join(first_line) + r' \\ \cline{2-10}')  # Add cline to the first row
             for line in block[1:]:
                 # Make all subsequent lines
-                formatted_rows.append(' & ' + ' & '.join(line[1:]) + r' \\ \cline{2-9}')
-            # Change the final line's \\ \cline{2-9} to \\ \hline
-            if formatted_rows[-1].endswith(r'\cline{2-9}'):
-                formatted_rows[-1] = formatted_rows[-1][:-len(r'\cline{2-9}')] + r'\hline'
+                formatted_rows.append(' & ' + ' & '.join(line[1:]) + r' \\ \cline{2-10}')
+            # Change the final line's \\ \cline{2-10} to \\ \hline
+            if formatted_rows[-1].endswith(r'\cline{2-10}'):
+                formatted_rows[-1] = formatted_rows[-1][:-len(r'\cline{2-10}')] + r'\hline'
         else:
             # Single row, add hline
             formatted_rows.append(' & '.join(block[0]) + r' \\ \hline')
@@ -193,8 +216,84 @@ def dataframe_to_latex_custom(df):
     table = table.replace(r'rule \\ \hline', r'rule')
     return table
 
+def dept_categories(df):
 
-def create_latex_doc(table):
+    # Define custom column widths
+    column_format = r'|>{\centering\arraybackslash}p{4cm}|' + r'>{\centering\arraybackslash}p{2cm}|' * (len(df.columns) - 1)
+
+    latex_code = df.to_latex(
+        index=False, 
+        escape=False, 
+        column_format=column_format, 
+        header=True,  # Automatically handles headers
+        bold_rows=False,
+        )
+    
+    # get just table data
+    lines = latex_code.split('\n')
+    header = '\n'.join(lines[0:2])
+    footer = '\n'.join(lines[-2:])
+    rows = lines[2:len(lines)-2]
+    rows = '\n'.join(rows)
+
+    # Split into table data
+    rows = rows.replace('midrule', r'midrule\\')
+    rows = rows.split(r'\\')
+
+    # Bold and color rows
+    bold_rows = [0, 2, 9]
+    colors = ['gray!50', 'cyan!50', 'cyan!50']
+    for i in range(len(bold_rows)):
+        ix = bold_rows[i]
+        line = r'\textbf{' + rows[ix].strip().replace(r' & ', r'} & \textbf{') + r'} '
+        rows[ix] = rf'\rowcolor{{{colors[i]}}}' + line
+
+    # Put it all together
+    divider = r' \\ \hline' + '\n'
+    table = header + divider.join(rows) + footer
+    table = table.replace(r'rule \\ \hline', r'rule')
+    return table
+
+def dept_rev(df):
+
+    # Define custom column widths
+    column_format = r'|>{\centering\arraybackslash}p{4cm}|' + r'>{\centering\arraybackslash}p{2cm}|' * (len(df.columns) - 1)
+
+    latex_code = df.to_latex(
+        index=False, 
+        escape=False, 
+        column_format=column_format, 
+        header=True,  # Automatically handles headers
+        bold_rows=False,
+        )
+    
+    # get just table data
+    lines = latex_code.split('\n')
+    header = '\n'.join(lines[0:2])
+    footer = '\n'.join(lines[-2:])
+    rows = lines[2:len(lines)-2]
+    rows = '\n'.join(rows)
+
+    # Split into table data
+    rows = rows.replace('midrule', r'midrule\\')
+    rows = rows.split(r'\\')
+
+    # Bold and color rows
+    bold_rows = [0, 2, 6]
+    colors = ['gray!50', 'lime!50', 'lime!50']
+    for i in range(len(bold_rows)):
+        ix = bold_rows[i]
+        line = r'\textbf{' + rows[ix].strip().replace(r' & ', r'} & \textbf{') + r'} '
+        rows[ix] = rf'\rowcolor{{{colors[i]}}}' + line
+
+    # Put it all together
+    divider = r' \\ \hline' + '\n'
+    table = header + divider.join(rows) + footer
+    table = table.replace(r'rule \\ \hline', r'rule')
+    return table
+
+
+def create_latex_doc(table1, table2, table3):
     doc = Document()
     doc.preamble.append(Package('geometry', options='margin=1in'))
     doc.preamble.append(Package('xcolor', options='table'))
@@ -209,8 +308,28 @@ def create_latex_doc(table):
     with doc.create(Table(position='htbp!')):
         # Main header
         doc.append(NoEscape(r'\begin{center}'))
-        doc.append(NoEscape(rf'\large \underline{{{table.main()}}} \smallskip \normalsize'))
-        for line in table.subheaders():
+        doc.append(NoEscape(rf'\large \underline{{{table1.main()}}} \smallskip \normalsize'))
+        for line in table1.subheaders():
+            doc.append(NoEscape(rf'\\ {{{line}}}'))
+        doc.append(NoEscape(r'\end{center}'))
+
+        # Smaller font to fit on one page
+        doc.append(NoEscape(r'\scriptsize'))
+
+        # Table with no extra borders, smaller font, and bold headers
+        doc.append(NoEscape(r"""
+            \renewcommand{\arraystretch}{1.3} % Increase the row height
+            \setlength{\tabcolsep}{4pt}       % Add padding
+        """))
+
+        # Manually append the DataFrame-to-LaTeX converted table data
+        doc.append(NoEscape(dataframe_to_latex_custom(table1.get_table_data())))
+
+    with doc.create(Table(position='htbp!')):
+        # Main header
+        doc.append(NoEscape(r'\begin{center}'))
+        doc.append(NoEscape(rf'\large \underline{{{table2.main()}}} \smallskip \normalsize'))
+        for line in table2.subheaders():
             doc.append(NoEscape(rf'\\ {{{line}}}'))
         doc.append(NoEscape(r'\end{center}'))
 
@@ -224,15 +343,35 @@ def create_latex_doc(table):
         """))
 
         # Manually append the DataFrame-to-LaTeX converted table data
-        doc.append(NoEscape(dataframe_to_latex_custom(table.get_table_data())))
+        doc.append(NoEscape(dept_categories(table2.get_table_data())))
+
+    with doc.create(Table(position='htbp!')):
+        # Main header
+        doc.append(NoEscape(r'\begin{center}'))
+        doc.append(NoEscape(rf'\large \underline{{{table3.main()}}} \smallskip \normalsize'))
+        for line in table3.subheaders():
+            doc.append(NoEscape(rf'\\ {{{line}}}'))
+        doc.append(NoEscape(r'\end{center}'))
+
+        # Smaller font to fit on one page
+        doc.append(NoEscape(r'\footnotesize'))
+
+        # Table with no extra borders, smaller font, and bold headers
+        doc.append(NoEscape(r"""
+            \renewcommand{\arraystretch}{1.3} % Increase the row height
+            \setlength{\tabcolsep}{4pt}       % Add padding
+        """))
+
+        # Manually append the DataFrame-to-LaTeX converted table data
+        doc.append(NoEscape(dept_rev(table3.get_table_data())))
 
     return doc
 
-def convert_to_latex(table):
+def convert_to_latex(table1, table2, table3):
     print('converting to LaTex...')
 
     # Create the document
-    doc = create_latex_doc(table)
+    doc = create_latex_doc(table1, table2, table3)
 
     # Save the document to a .tex file
     doc_file = os.path.join(OUTPUT, 'table1')
@@ -246,16 +385,18 @@ def convert_to_pdf(doc):
     # Optionally, compile to PDF (requires LaTeX installed on your system)
     doc.generate_pdf(os.path.join(OUTPUT, 'table1'), clean_tex=False, compiler='pdflatex')
 
-def read_data(filepath, sheets = SHEETS_TO_LOAD):
+def read_data(filepath, sheet):
     print('Reading data from Excel...')
-    sectionsAB = pd.read_excel(filepath, sheet_name=sheets, header=None)
-    return sectionsAB[SHEETS_TO_LOAD[0]]
+    sectionsAB = pd.read_excel(filepath, sheet_name=SHEETS_TO_LOAD, header=None)
+    return sectionsAB[sheet]
 
 # ======================= Main ===============================================
 
 def main():
-    table1 = Budget_Table(read_data(filepath))
-    doc = convert_to_latex(table1)
+    table1 = Budget_Table(read_data(filepath, sheet = SHEETS_TO_LOAD[0]))
+    table2 = DeptTable(read_data(filepath, sheet = SHEETS_TO_LOAD[1]))
+    table3 = RevTable(read_data(filepath, sheet = SHEETS_TO_LOAD[1]))
+    doc = convert_to_latex(table1, table2, table3)
     convert_to_pdf(doc)
 
 def test():

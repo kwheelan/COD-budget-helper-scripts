@@ -4,33 +4,40 @@ K. Wheelan
 Feb 2025
 """
 
-from pylatex import Table, NoEscape
+from models import BaseDF
+import pandas as pd
+import typing
 
 class BaseTable:
     """
     A class to hold a basic table and convert to LaTeX
     """
-    def __init__(self, custom_df, main_header, subheaders):
+    def __init__(self, custom_df : BaseDF, main_header : str, subheaders : str):
         # read data
         self.table_df = custom_df # type BaseDF
         self.topline_header = main_header
         self.other_header_lines = subheaders
         self.latex = ''
 
-    def table_data(self):
+    def table_data(self) -> pd.DataFrame:
         return self.table_df.latex_ready_data()
 
-    def main(self):
+    def main(self) -> str:
         return self.topline_header
 
-    def subheaders(self):
+    def subheaders(self) -> list[str]:
         return self.other_header_lines
     
-    def column_format(self):
+    def column_format(self, format=None):
         """ Determines column width and centering for table """
         n_cols = len(self.table_data().columns)
-        # default to center with auto-width
-        return '|c|' + 'c|' * (n_cols - 1)
+        if format is None:
+            # default to center with auto-width
+            return '|c|' + 'c|' * (n_cols - 1)
+    
+    def rename_cols(self, new_cols):
+        """ rename headers """
+        self.table_df.adjust_col_names(new_cols)
 
     def default_latex(self):
         latex = self.table_data().to_latex(
@@ -44,9 +51,14 @@ class BaseTable:
         return latex.replace(r'\\', r'\\ \hline')
 
     def latex_table_rows(self):
-        # Split into table data
-        rows = self.latex.replace('midrule', r'midrule\\')
-        return rows.split(r'\\')
+        """ Split into table data list by row """
+        lines = self.latex.split('\n')
+        # Remove header and footer
+        rows = lines[2:len(lines)-2]
+        rows = '\n'.join(rows)
+        rows = rows.replace('midrule', r'midrule\\')
+        divider = r'\\ \hline' + '\n'
+        return rows.split(divider)
     
     def columns(self):
         return list(self.table_data().columns)
@@ -65,35 +77,37 @@ class BaseTable:
                     cells[col] = rf'\textbf{{{cells[col].strip()}}}'
             rows[i] = ' & '.join(cells)
         self.update_latex(rows)
-        
+
+    def bold_rows(self, row_nums):
+        """ Bold rows in the table by row number (row 0 is header)"""
+        for ix in row_nums:
+            rows = self.latex_table_rows()
+            rows[ix] = r'\textbf{' + rows[ix].strip().replace(r' & ', r'} & \textbf{') + r'} '
+            self.update_latex(rows)
+
+    def highlight_row(self, row_num, color):
+        """ Add color to a row in the table """
+        rows = self.latex_table_rows()
+        rows[row_num] = rf'\rowcolor{{{color}}}' + rows[row_num]
+        self.update_latex(rows)
+
+    def highlight_rows(self, row_list, color_list):
+        """ color multiple rows at once """
+        for row, color in zip(row_list, color_list):
+            self.highlight_row(row, color)
+
     def update_latex(self, rows):
-        latex = r'\\'.join(rows).replace(r'rule\\', r'rule')
-        self.latex = latex.replace(r'rule \\ \hline', r'rule')
+        """ convert list of rows to full latex string """
+        divider = r'\\ \hline' + '\n'
+        latex = divider.join(rows).replace(r'rule\\', r'rule')
+        latex = latex.replace(r'rule \\ \hline', r'rule')
+        header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n' + r'\toprule' + '\n'
+        footer = '\n\n' + r'\bottomrule' + '\n' +  r'\end{tabular}'
+        self.latex = header + latex + footer
     
     def process_latex(self):
+        """ Add any formatting and return latex """
         self.latex = self.default_latex()
-        self.bold_cols(['Department'])
-        return self.latex
-
-    def export_latex_table(self, doc):
-        with doc.create(Table(position='htbp!')):
-            # Main header
-            doc.append(NoEscape(r'\begin{center}'))
-            doc.append(NoEscape(rf'\large \underline{{{self.main()}}} \smallskip \normalsize'))
-            for line in self.subheaders():
-                doc.append(NoEscape(rf'\\ {{{line}}}'))
-            doc.append(NoEscape(r'\end{center}'))
-
-            # Smaller font to fit on one page
-            doc.append(NoEscape(r'\scriptsize'))
-
-            # Table with no extra borders, smaller font, and bold headers
-            doc.append(NoEscape(r"""
-                \renewcommand{\arraystretch}{1.3} % Increase the row height
-                \setlength{\tabcolsep}{4pt}       % Add padding
-            """))
-
-            # Manually append the DataFrame-to-LaTeX converted table data
-            doc.append(NoEscape(self.process_latex()))
+        return self.latex        
 
 

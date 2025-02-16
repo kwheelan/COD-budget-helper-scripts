@@ -26,9 +26,31 @@ class BaseDoc:
         doc.preamble.append(NoEscape(r'\pagestyle{empty}'))
         
         for table in table_list:
-            table.export_latex_table(doc)
+            self.latex_table(doc, table)
 
         self.doc = doc
+
+    def latex_table(self, doc, table):
+        """ Create table from doc and table object """
+        with doc.create(Table(position='htbp!')):
+            # Main header
+            doc.append(NoEscape(r'\begin{center}'))
+            doc.append(NoEscape(rf'\large \underline{{{table.main()}}} \smallskip \normalsize'))
+            for line in table.subheaders():
+                doc.append(NoEscape(rf'\\ {{{line}}}'))
+            doc.append(NoEscape(r'\end{center}'))
+
+            # Smaller font to fit on one page
+            doc.append(NoEscape(r'\scriptsize'))
+
+            # Table with no extra borders, smaller font, and bold headers
+            doc.append(NoEscape(r"""
+                \renewcommand{\arraystretch}{1.3} % Increase the row height
+                \setlength{\tabcolsep}{4pt}       % Add padding
+            """))
+
+            # Manually append the DataFrame-to-LaTeX converted table data
+            doc.append(NoEscape(table.process_latex()))
 
     def save_as_latex(self):
         self.create_doc(self.table_list)

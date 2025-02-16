@@ -4,6 +4,14 @@ class BaseDF:
         self.raw_df = df
         self.processed = self.clean_table_data(df)
 
+    def adjust_col_names(self, new_cols : list[str]) -> list[str]:
+        """ Placeholder for renaming columns explicitly """
+        columns_list = list(self.processed)
+        if len(columns_list) == len(new_cols):
+            self.processed.columns = new_cols
+        else: 
+            print ('Error: attempt to replace col names with list of wrong length')
+
     @staticmethod
     def adjust_headers(df):
         # Adjust column names

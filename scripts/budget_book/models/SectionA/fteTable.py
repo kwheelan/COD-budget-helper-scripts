@@ -23,4 +23,5 @@ class FteTable(ExcelTable):
         self.bold_cols(['Category', 'Variance FY25 vs FY26'])
         self.bold_rows([0, 29, 36, 37])
         self.highlight_rows([0, 29, 36, 37], ['orange!50', 'orange!25', 'orange!25', 'orange!50'])
+        self.merge_rows(col_name='Category')
         return self.latex

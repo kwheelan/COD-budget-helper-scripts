@@ -108,6 +108,87 @@ class BaseTable:
     def process_latex(self):
         """ Add any formatting and return latex """
         self.latex = self.default_latex()
-        return self.latex        
+        return self.latex   
+
+    def merge_rows(self, col_name):
+        """ merge rows in a single column (all empty cells merged with value above)"""
+        # pass over headers and \midrule for merging
+        headers = self.latex_table_rows()[:2]
+        rows = self.latex_table_rows()[2:]
+        col_ix = self.columns().index(col_name)
+        rows = headers + RowMerger().merge_rows(rows, col_ix)
+        self.update_latex(rows)
+    
+class RowMerger:
+    def merge_rows(self, rows: list[str], col_ix: int):
+        """Merge rows vertically based on the specified column."""
+        multirow_blocks = self.create_multirow_blocks(rows, col_ix)
+        formatted_rows = self.format_multirow_blocks(multirow_blocks, col_ix)
+        return formatted_rows
+
+    def create_multirow_blocks(self, rows: list[str], col_ix: int):
+        """Identify blocks of rows that should be merged as multirows."""
+        multirow_blocks = []
+        current_block = []
+
+        for row in rows:
+            if not row.strip():
+                continue
+
+            cells = row.split(' & ')
+            current_value = cells[col_ix].strip()
+
+            if current_value != '':
+                if current_block:
+                    multirow_blocks.append(current_block)
+                current_block = [cells]
+            else:
+                current_block.append(cells)
+
+        if current_block:
+            multirow_blocks.append(current_block)
+
+        return multirow_blocks
+    
+    @staticmethod
+    def cline(line, col_ix):
+        """ Create horizontal line of correct length """
+        ncols = len(line)
+        if col_ix == 0:
+            return rf'\cline{{2-{ncols}}}'
+        elif col_ix == ncols-1:
+            return rf'\cline{{1-{ncols-1}}}'
+        return rf'\cline{{1-{col_ix}}} \cline{{{col_ix+1}-{ncols}}}'
+
+    def format_multirow_blocks(self, multirow_blocks, col_ix):
+        """Format each block with multirow LaTeX commands."""
+        formatted_rows = []
+
+        for block in multirow_blocks:
+            rowspan = len(block)
+            if rowspan > 1:
+                pre = ' & '.join(block[0][:col_ix])
+                post = ' & '.join(block[0][col_ix + 1:])
+                target_cell = block[0][col_ix]
+
+                first_line = (
+                    (pre + ' & ' if pre else '') +
+                    r'\multirow{{{}}}{{*}}{{{}}}'.format(rowspan, target_cell) +
+                    (f' & {post}' if post else '') +
+                    self.cline(block, col_ix) +
+                    r' \\'
+                )
+                formatted_rows.append(first_line)
+
+                # Add the rest of the lines
+                for line in block[1:]:
+                    formatted_row = ' & '.join(
+                        line[:col_ix] + line[col_ix + 1:]
+                    ) 
+                    formatted_rows.append(formatted_row)
+            else:
+                formatted_rows.append(' & '.join(block[0]))
+
+        return formatted_rows
 
 

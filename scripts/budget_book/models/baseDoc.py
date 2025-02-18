@@ -52,18 +52,32 @@ class BaseDoc:
         self.define_color('lightblue', (155, 194, 230))
         self.define_color('lineblue', (47, 117, 181))
 
+    @staticmethod
+    def header(doc, table, bold = True, special_main = False):
+        """ create header for table """
+        # center it
+        doc.append(NoEscape(r'\begin{center}'))
+        if bold:
+            doc.append(NoEscape(r'\textbf{'))
+        # some tables need a larger underlined header
+        if special_main:
+            doc.append(NoEscape(rf'\large \underline{{{table.main()}}} \smallskip \normalsize'))
+        else:
+            doc.append(NoEscape(table.main()))
+        # add a line for each subheader
+        for line in table.subheaders():
+            # if final line of bold area, close with }
+            if line == table.subheaders()[-1] and bold:  
+                doc.append(NoEscape(rf'\\ {{{line}}}' + r'}'))
+            else:
+                doc.append(NoEscape(rf'\\ {{{line}}}'))
+        doc.append(NoEscape(r'\end{center}'))
+
     def latex_table(self, doc, table):
         """ Create table from doc and table object """
         with doc.create(Table(position='htbp!')):
-            # Main header
-            doc.append(NoEscape(r'\begin{center}'))
-            doc.append(NoEscape(rf'\large \underline{{{table.main()}}} \smallskip \normalsize'))
-            for line in table.subheaders():
-                doc.append(NoEscape(rf'\\ {{{line}}}'))
-            doc.append(NoEscape(r'\end{center}'))
-
-            # Smaller font to fit on one page
-            doc.append(NoEscape(r'\scriptsize'))
+            # table header
+            self.header(doc, table)
 
             # Table with no extra borders, smaller font, and bold headers
             doc.append(NoEscape(r"""

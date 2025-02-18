@@ -59,7 +59,8 @@ class BaseTable:
             lines = lines[:-1]
         # Remove header and footer
         rows = lines[1:len(lines)-1]
-        rows = '\n'.join(rows)
+        # add final new line to ensure \hline disappears
+        rows = '\n'.join(rows) + '\n'
         divider = r'\\ \hline' + '\n'
         return rows.split(divider)
     
@@ -85,8 +86,6 @@ class BaseTable:
         """ Bold rows in the table by row number (row 0 is header)"""
         for ix in row_nums:
             rows = self.latex_table_rows()
-            print(len(rows))
-            print(f'{ix}: {rows[ix]}')
             rows[ix] = r'\textbf{' + rows[ix].strip().replace(r' & ', r'} & \textbf{') + r'} '
             self.update_latex(rows)
 
@@ -106,7 +105,7 @@ class BaseTable:
         divider = r'\\ \hline' + '\n'
         latex = divider.join(rows)
         header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n'
-        footer = '\n' +  r'\end{tabular}'
+        footer = r'\end{tabular}'
         self.latex = header + latex + footer
     
     def process_latex(self):

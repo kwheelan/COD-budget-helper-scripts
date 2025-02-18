@@ -19,6 +19,6 @@ class SummaryCategoryTable(ExcelTable):
         self.latex = self.default_latex()
         #self.bold_cols(['Category', 'Variance FY25 vs FY26'])
         self.bold_rows([0, 1, 8])
-        self.highlight_rows([1, 8], ['orange!50', 'orange!25'])
+        self.highlight_rows([1, 8], ['lightblue', 'lightblue'])
         #self.merge_rows(col_name='Category')
         return self.latex

@@ -6,7 +6,6 @@ Feb 2025
 
 from models import BaseDF
 import pandas as pd
-import typing
 
 class BaseTable:
     """
@@ -43,20 +42,24 @@ class BaseTable:
         latex = self.table_data().to_latex(
             index=False, 
             escape=False, 
-            column_format=self.column_format(), 
-            header=True,  # Automatically handles headers
-            bold_rows=False,
+            column_format=self.column_format()
         )
+         # Remove midrule, etc
+        latex = latex.replace("\\toprule\n", "")
+        latex = latex.replace("\\midrule\n", "")
+        latex = latex.replace("\\bottomrule\n", "")
         # add horizontal lines
         return latex.replace(r'\\', r'\\ \hline')
 
     def latex_table_rows(self):
         """ Split into table data list by row """
         lines = self.latex.split('\n')
+        # remove empty trailing space
+        if lines[-1] == '':
+            lines = lines[:-1]
         # Remove header and footer
-        rows = lines[2:len(lines)-2]
+        rows = lines[1:len(lines)-1]
         rows = '\n'.join(rows)
-        rows = rows.replace('midrule', r'midrule\\')
         divider = r'\\ \hline' + '\n'
         return rows.split(divider)
     
@@ -67,9 +70,9 @@ class BaseTable:
         """ Add bolding to columns in data """
         col_ix = [self.columns().index(col) for col in col_list]
         rows = self.latex_table_rows()
-        # Start with row 2 to skip latex table preamble, headers and \midrule
-        # skip last 2 lines as well for end of tabular 
-        for i in range(2, len(rows)-2):
+        # Start with row 2 to skip latex table preamble and headers
+        # skip last line as well for end of tabular 
+        for i in range(2, len(rows)-1):
             cells = rows[i].split(' & ')
             # if cell isn't empty, add the bold tag
             for col in col_ix:
@@ -82,6 +85,8 @@ class BaseTable:
         """ Bold rows in the table by row number (row 0 is header)"""
         for ix in row_nums:
             rows = self.latex_table_rows()
+            print(len(rows))
+            print(f'{ix}: {rows[ix]}')
             rows[ix] = r'\textbf{' + rows[ix].strip().replace(r' & ', r'} & \textbf{') + r'} '
             self.update_latex(rows)
 
@@ -99,10 +104,9 @@ class BaseTable:
     def update_latex(self, rows):
         """ convert list of rows to full latex string """
         divider = r'\\ \hline' + '\n'
-        latex = divider.join(rows).replace(r'rule\\', r'rule')
-        latex = latex.replace(r'rule \\ \hline', r'rule')
-        header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n' + r'\toprule' + '\n'
-        footer = '\n\n' + r'\bottomrule' + '\n' +  r'\end{tabular}'
+        latex = divider.join(rows)
+        header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n'
+        footer = '\n' +  r'\end{tabular}'
         self.latex = header + latex + footer
     
     def process_latex(self):
@@ -112,7 +116,7 @@ class BaseTable:
 
     def merge_rows(self, col_name):
         """ merge rows in a single column (all empty cells merged with value above)"""
-        # pass over headers and \midrule for merging
+        # pass over headers for merging
         headers = self.latex_table_rows()[:2]
         rows = self.latex_table_rows()[2:]
         col_ix = self.columns().index(col_name)

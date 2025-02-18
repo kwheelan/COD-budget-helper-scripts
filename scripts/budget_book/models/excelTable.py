@@ -5,7 +5,7 @@ import pandas as pd
 
 class ExcelDF(BaseDF):
 
-    def __init__(self, filepath, sheet, start_row=6, end_row=44, start_col=1, end_col=11):
+    def __init__(self, filepath, sheet, start_row, end_row, start_col, end_col):
         print('Reading data from Excel...')
         tabs = pd.read_excel(filepath, sheet_name=SHEETS_TO_LOAD, header=None)
         df = tabs[sheet]

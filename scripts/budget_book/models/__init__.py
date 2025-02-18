@@ -9,3 +9,4 @@ from .baseDoc import *
 from .baseTable import *
 from .excelTable import *
 from .SectionA import *
+from .SectionB import *

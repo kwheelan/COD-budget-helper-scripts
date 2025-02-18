@@ -13,12 +13,13 @@ def main():
     doc.convert_to_pdf()
 
 def test():
-    out1 = cline([1,2,3,4,5], 0)
-    out2 = cline([1,2,3,4,5], 4)
-    out3 = cline([1,2,3,4,5], 2)
-    print(out1)
-    print(out2)
-    print(out3)
+    pass
+    # out1 = cline([1,2,3,4,5], 0)
+    # out2 = cline([1,2,3,4,5], 4)
+    # out3 = cline([1,2,3,4,5], 2)
+    # print(out1)
+    # print(out2)
+    # print(out3)
 
 if __name__ == '__main__':
     # test()

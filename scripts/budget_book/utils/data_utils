@@ -1,31 +1,28 @@
 """
 Data utils for cleaning text and values in a dataframe
-
-RIGHT NOW DUPLICATED
 """
 
-def escape_ampersands(text):
-    # Replace & with \& in all string elements
-    if isinstance(text, str):
-        return text.replace('&', r'\&')
-    return text
+import pandas as pd
 
-def remove_new_lines(text):
-    # Replace & with \& in all string elements
-    if isinstance(text, str):
-        return text.replace('\n', ' ').replace('  ', ' ')
-    return text
+import os
 
-def round_floats(value):
-    if isinstance(value, float) or isinstance(value, int):
-        # avoid float imprecision errors
-        value = round(value, 3)
-        if value % 1 == 0:
-            # then just add comma
-            return f'{value:,.0f}'
-        if round(value,1) == value:
-            # then round to one decimal
-            return f'{value:,.1f}'
-        # otherwise, round to 2 places
-        return f'{value:,.2f}'
-    return value
+# File paths
+DATA = 'input_data/model_copy'
+file = os.listdir(DATA)[0]
+filepath = os.path.join(DATA, file)
+
+MODEL_DATA = [
+    'Expenditures',
+    'Revenue',
+    'Positions',
+    'FY24-FY25'
+]
+
+def read_model(filepath, sheet):
+    tabs = pd.read_excel(filepath, sheet_name=[sheet], header=None)
+    df = tabs[sheet]
+    # then trim to table data
+    df = df.iloc[11:22, 0:50]
+    print(df)
+
+read_model(filepath, MODEL_DATA[0])

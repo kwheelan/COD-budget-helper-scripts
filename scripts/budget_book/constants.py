@@ -10,3 +10,10 @@ SHEETS_TO_LOAD = [
     'Section A FTE',
     'Section B Dept Packet'
 ]
+
+MODEL_DATA = [
+    'Expenditures',
+    'Revenue',
+    'Positions',
+    'FY24-FY25'
+]

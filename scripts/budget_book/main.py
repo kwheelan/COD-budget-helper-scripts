@@ -7,9 +7,11 @@ from models import *
 from constants import filepath, SHEETS_TO_LOAD
 
 def main():
-    table1 = ExpenditureCategories(filepath, '10')
-    table2 = RevenueCategories(filepath, '10')
-    doc = BaseDoc([table1, table2], 'sample_tables')
+    cat_exp = ExpenditureCategories(filepath, '10')
+    cat_rev = RevenueCategories(filepath, '10')
+    cat_fund_exp = ExpFundCatTable(filepath, '10')
+    cat_fund_rev = RevFundCatTable(filepath, '10')
+    doc = BaseDoc([cat_exp, cat_rev, cat_fund_exp, cat_fund_rev], 'sample_tables')
     doc.save_as_latex()
     doc.convert_to_pdf()
 
@@ -19,5 +21,5 @@ def test():
     print(rev.group_by_category_and_fund('10'))
 
 if __name__ == '__main__':
-    test()
-    # main()
+    # test()
+    main()

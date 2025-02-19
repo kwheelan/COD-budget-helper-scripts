@@ -96,7 +96,7 @@ class Sheet(BaseDF):
 
     def group_by_category(self, dept):
         # filter by dept
-        df = self.group_df_by_category(df.filter_by_dept(dept))
+        df = self.group_df_by_category(self.filter_by_dept(dept))
 
         # add sums to top and bottom of table
         bottom = self.total_row(df, 'Grand Total')
@@ -108,6 +108,7 @@ class Sheet(BaseDF):
         df = pd.concat([df_with_sums_top, bottom], ignore_index=True)
         # Round all float values to 2 decimal places
         df = df.map(self.round_floats)
+        return df
 
     def fund_name(self, fund):
         """ get fund name from number """

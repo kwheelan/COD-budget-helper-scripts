@@ -16,7 +16,7 @@ class SummaryCategoryTable(BaseTable):
 
     def column_format(self, format=None):
         n_cols = len(self.table_data().columns)
-        return r'>{\arraybackslash}p{11.25cm}' + r'>{\centering\arraybackslash}p{2.25cm}' * (n_cols - 1) 
+        return r'>{\arraybackslash}p{11.5cm}' + r'>{\centering\arraybackslash}p{2.25cm}' * (n_cols - 1) 
 
     @staticmethod
     def header():
@@ -59,9 +59,10 @@ class SummaryCategoryTable(BaseTable):
     
 class ExpenditureCategories(SummaryCategoryTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df=None):
         self.dept = dept
-        custom_df = Expenditures(filepath)
+        if custom_df is None:
+            custom_df = Expenditures(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
@@ -75,9 +76,10 @@ class ExpenditureCategories(SummaryCategoryTable):
 
 class RevenueCategories(SummaryCategoryTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df):
         self.dept = dept
-        custom_df = Revenues(filepath)
+        if custom_df is None:
+            custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',

@@ -20,6 +20,12 @@ class BaseTable:
 
     def table_data(self) -> pd.DataFrame:
         return self.table_df.latex_ready_data()
+    
+    def isEmpty(self):
+        data = self.table_data()
+        
+        # Check if data is None or if it's an empty DataFrame
+        return not (isinstance(data, pd.DataFrame) and not data.empty)
 
     def main(self) -> str:
         return self.topline_header
@@ -39,6 +45,8 @@ class BaseTable:
         self.table_df.adjust_col_names(new_cols)
 
     def default_latex(self):
+        if self.isEmpty():
+            return ''
         latex = self.table_data().to_latex(
             index=False, 
             escape=False, 
@@ -67,7 +75,6 @@ class BaseTable:
         rows = lines[1:len(lines)-1]
         # add final new line to ensure \hline disappears
         rows = '\n'.join(rows) + '\n'
-        # print(rows.split(self.divider()))
         return rows.split(self.divider())
     
     def columns(self):

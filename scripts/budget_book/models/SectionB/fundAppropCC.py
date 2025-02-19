@@ -60,6 +60,8 @@ class FundAppropCCTable(FundCategoryTable):
         return fund_rows
     
     def process_latex(self):
+        if self.table_data() is None:
+            return ''
         # self.rename_cols()
         self.latex = self.default_latex()
         # indent cc x 3, approp x2, fund x1
@@ -77,9 +79,10 @@ class FundAppropCCTable(FundCategoryTable):
 
 class ExpFullTable(FundAppropCCTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df):
         self.dept = dept
-        custom_df = Expenditures(filepath)
+        if custom_df is None:
+            custom_df = Expenditures(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
@@ -95,9 +98,10 @@ class ExpFullTable(FundAppropCCTable):
 
 class RevFullTable(FundAppropCCTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df):
         self.dept = dept
-        custom_df = Revenues(filepath)
+        if custom_df is None:
+            custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
@@ -112,14 +116,20 @@ class RevFullTable(FundAppropCCTable):
     
 class FTEFullTable(FundAppropCCTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df):
         self.dept = dept
-        custom_df = FTEs(filepath)
+        if custom_df is None:
+            custom_df = FTEs(filepath)
         dept_name = custom_df.dept_name(dept)
-        main_header = 'CITY OF DETROIT'
-        subheaders = ['BUDGET DEVELOPMENT',
-                      r'POSITION DETAIL BY DEPARTMENT, FUND, APPROPRIATION, \& COST CENTER',
-                      'DEPARTMENT ' + dept_name.upper()]
+        # deal with empty table case
+        if dept_name is None:
+            main_header = ''
+            subheaders = []
+        else:
+            main_header = 'CITY OF DETROIT'
+            subheaders = ['BUDGET DEVELOPMENT',
+                        r'POSITION DETAIL BY DEPARTMENT, FUND, APPROPRIATION, \& COST CENTER',
+                        'DEPARTMENT ' + dept_name.upper()]
         super().__init__(custom_df, 'orange1', 
                          'orange2',  None,
                          'lineorange', main_header, subheaders)
@@ -149,6 +159,8 @@ class FTEFullTable(FundAppropCCTable):
         """
 
     def table_data(self):
+        if not self.table_df.dept_name(self.dept):
+            return None
         return self.table_df.group_by_fund_approp_cc(self.dept)
 
     def job_rows(self):
@@ -166,6 +178,9 @@ class FTEFullTable(FundAppropCCTable):
         return [i for i in super().cc_rows() if i not in job_rows]
     
     def process_latex(self):
+        """ change table to formatted latex """
+        if self.table_data() is None:
+            return ''
         # self.rename_cols()
         self.latex = self.default_latex()
         # indent cc x 3, approp x2, fund x1

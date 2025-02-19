@@ -28,6 +28,8 @@ class Sheet(BaseDF):
     def dept_name(self, dept):
         """ get department name from number """
         df = self.processed[(self.processed['Department #'] == str(dept))]
+        if not df.shape[0]:
+            return None
         return list(df['Department Name'])[0]
 
     def group_df_by_category(self, df):

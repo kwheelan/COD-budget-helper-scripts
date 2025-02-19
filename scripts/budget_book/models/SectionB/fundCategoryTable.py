@@ -61,9 +61,10 @@ class FundCategoryTable(SummaryCategoryTable):
     
 class ExpFundCatTable(FundCategoryTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df):
         self.dept = dept
-        custom_df = Expenditures(filepath)
+        if custom_df is None:
+            custom_df = Expenditures(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
@@ -79,9 +80,10 @@ class ExpFundCatTable(FundCategoryTable):
 
 class RevFundCatTable(FundCategoryTable):
 
-    def __init__(self, filepath, dept):
+    def __init__(self, filepath, dept, custom_df):
         self.dept = dept
-        custom_df = Revenues(filepath)
+        if custom_df is None:
+            custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',

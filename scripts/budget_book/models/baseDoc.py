@@ -42,11 +42,12 @@ class BaseDoc:
         self.add_preamble()
         # create tables
         for table in table_list:
-            # make page landscape
-            self.doc.append(NoEscape(r'\begin{landscape}'))
-            self.latex_table(self.doc, table)
-            self.doc.append(NoEscape(r'\end{landscape}'))
-            self.doc.append(NoEscape(r'\newpage'))
+            if not table.isEmpty():
+                # make page landscape
+                self.doc.append(NoEscape(r'\begin{landscape}'))
+                self.latex_table(self.doc, table)
+                self.doc.append(NoEscape(r'\end{landscape}'))
+                self.doc.append(NoEscape(r'\newpage'))
 
     def define_color(self, name, rgb: tuple[int, int, int]):
         r, g, b = rgb

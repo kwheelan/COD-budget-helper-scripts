@@ -16,8 +16,8 @@ def main():
 def test():
     # Expenditures(filepath, 'Expenditures')
     rev = Revenues(filepath)
-    print(rev.group_by_category('10'))
+    print(rev.group_by_category_and_fund('10'))
 
 if __name__ == '__main__':
-    # test()
-    main()
+    test()
+    # main()

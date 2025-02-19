@@ -1,6 +1,6 @@
 
 
-from . import Sheet
+from .baseSheet import Sheet
 
 class Revenues(Sheet):
     """ Import from budget model """

@@ -51,6 +51,8 @@ class BaseDoc:
     def define_all_colors(self):
         self.define_color('lightblue', (155, 194, 230))
         self.define_color('lineblue', (47, 117, 181))
+        self.define_color('lightgreen', (169, 208, 142))
+        self.define_color('linegreen', (84, 130, 53))
 
     @staticmethod
     def header(doc, table, bold = True, special_main = False):

@@ -1,14 +1,15 @@
 
-from models import ExcelTable
+from models import BaseTable
+from models.modelDF import Expenditures
 
-class SummaryCategoryTable(ExcelTable):
+class SummaryCategoryTable(BaseTable):
     """
     Represents Section B Department tables
     Expenditures and Revenues by Summary Category
     """
 
-    def __init__(self, custom_df, primary_color, line_color):
-        super().__init__(custom_df)
+    def __init__(self, custom_df, primary_color, line_color, main_header, subheaders):
+        super().__init__(custom_df, main_header, subheaders)
         self.primary_color = primary_color
         self.line_color = line_color
 
@@ -57,11 +58,26 @@ class SummaryCategoryTable(ExcelTable):
     
 class ExpenditureCategories(SummaryCategoryTable):
 
-    def __init__(self, custom_df):
-        super().__init__(custom_df, 'blue1', 'lineblue')
+    def __init__(self, filepath, dept):
+        custom_df = Expenditures(filepath)
+        dept_name = custom_df.dept_name(dept)
+        main_header = 'CITY OF DETROIT'
+        subheaders = ['BUDGET DEVELOPMENT',
+                      'EXPENDITURES BY SUMMARY CATEGORY - ALL FUNDS',
+                      dept_name.upper()]
+        super().__init__(custom_df, 'blue1', 'lineblue', main_header, subheaders)
+        
+    def table_data(self):
+        return self.table_df.group_by_category('10')
 
 
 class RevenueCategories(SummaryCategoryTable):
 
-    def __init__(self, custom_df):
-        super().__init__(custom_df, 'green1', 'linegreen')
+    def __init__(self, filepath, dept):
+        custom_df = Expenditures(filepath)
+        dept_name = custom_df.dept_name(dept)
+        main_header = 'CITY OF DETROIT'
+        subheaders = ['BUDGET DEVELOPMENT',
+                      'EXPENDITURES BY SUMMARY CATEGORY - ALL FUNDS',
+                      dept_name.upper()]
+        super().__init__(custom_df, 'green1', 'linegreen', main_header, subheaders)

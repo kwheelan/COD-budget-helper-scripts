@@ -201,12 +201,12 @@ class Sheet(BaseDF):
                     final_df = pd.concat([final_df, approp_df])
             # add the fund total on top
             if fund_df.shape[0] > 0:
-                fund_total = self.total_row_without_double_counting(fund_df, self.fund_name(fund), 2, 'Cost Center Name')
+                fund_total = self.total_row_without_double_counting(fund_df, self.fund_name(fund), 1, 'Cost Center Name')
                 final_df = pd.concat([fund_total, final_df])
         # add total to top and bottom
         # add sums to top and bottom of table
-        bottom = self.total_row_without_double_counting(final_df, 'Grand Total', 2, 'Cost Center Name')
-        top = self.total_row_without_double_counting(final_df, self.dept_name(dept), 2, 'Cost Center Name')
+        bottom = self.total_row_without_double_counting(final_df, 'Grand Total', 3, 'Cost Center Name')
+        top = self.total_row_without_double_counting(final_df, self.dept_name(dept), 3, 'Cost Center Name')
 
         # Add the sum rows to the top and bottom of the DataFrame
         df_with_sums_top = pd.concat([top, final_df], ignore_index=True)

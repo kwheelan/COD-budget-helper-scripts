@@ -5,9 +5,8 @@ class FundAppropCCTable(FundCategoryTable):
     def __init__(self, custom_df, primary_color, 
                  color2, color3,
                  line_color, main_header, subheaders):
-        self.color2 = color2
-        self.color3 = color3
         super().__init__(custom_df, primary_color, 
+                        color2, color3,
                          line_color, main_header, subheaders)
         
     @staticmethod
@@ -75,7 +74,7 @@ class ExpFullTable(FundAppropCCTable):
                          'lineblue', main_header, subheaders)
         
     def table_data(self):
-        return self.table_df.group_by_category_and_fund(self.dept)
+        return self.table_df.group_by_fund_approp_cc(self.dept)
 
 
 class RevFullTable(FundAppropCCTable):
@@ -93,7 +92,7 @@ class RevFullTable(FundAppropCCTable):
                          'linegreen', main_header, subheaders)
 
     def table_data(self):
-        return self.table_df.group_by_category_and_fund(self.dept)
+        return self.table_df.group_by_fund_approp_cc(self.dept)
     
 class FTEFullTable(FundAppropCCTable):
 
@@ -110,4 +109,4 @@ class FTEFullTable(FundAppropCCTable):
                          'linegreen', main_header, subheaders)
 
     def table_data(self):
-        return self.table_df.group_by_category_and_fund(self.dept)
+        return self.table_df.group_by_fund_approp_cc(self.dept)

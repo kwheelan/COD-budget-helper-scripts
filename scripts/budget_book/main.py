@@ -8,25 +8,26 @@ from constants import filepath
 import warnings
 
 def all_tables(filepath, dept):
-    # cat_exp = ExpenditureCategories(filepath, dept)
+    cat_exp = ExpenditureCategories(filepath, dept)
     # cat_rev = RevenueCategories(filepath, dept)
     # cat_fund_exp = ExpFundCatTable(filepath, dept)
     # cat_fund_rev = RevFundCatTable(filepath, dept)
     # all_exp = ExpFullTable(filepath, dept)
     # all_rev = RevFullTable(filepath, dept)
-    all_fte = FTEFullTable(filepath, dept)
+    # all_fte = FTEFullTable(filepath, dept)
     return [
-        # cat_exp, 
+        cat_exp, 
         # cat_rev, 
         # cat_fund_exp, 
         # cat_fund_rev,
         # all_exp,
         # all_rev,
-        all_fte
+        # all_fte
         ]
 
 def main(depts):
     for i in depts:
+        print(f'processing dept {i}:')
         # tables
         tables = all_tables(filepath, dept=i)
 
@@ -43,7 +44,7 @@ def test():
     rev = FTEs(filepath)
     print(rev.group_by_fund_approp_cc('10'))
 
-depts = ['13']
+depts = ['10']
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")

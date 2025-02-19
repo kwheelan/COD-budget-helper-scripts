@@ -29,18 +29,6 @@ class Sheet(BaseDF):
         """ get department name from number """
         df = self.processed[(self.processed['Department #'] == str(dept))]
         return list(df['Department Name'])[0]
-    
-    @staticmethod
-    def custom_order():
-        # Define the custom order for the 'Major Classification' column
-        return [
-            'Salaries \& Wages', 
-            'Employee Benefits', 
-            'Professional \& Contractual Services', 
-            'Operating Supplies', 
-            'Operating Services', 
-            'Fixed Charges'
-        ]
 
     def group_df_by_category(self, df):
         """ create a DF for expeditures by category """

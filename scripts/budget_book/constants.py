@@ -1,9 +1,7 @@
 import os
 
 # File paths
-DATA = 'input_data/model_copy'
-file = os.listdir(DATA)[0]
-filepath = os.path.join(DATA, file)
+filepath = r'c:\Users\katrina.wheelan\OneDrive - City of Detroit\Documents - M365-OCFO-Budget\BPA Team\FY 2026\1. Budget Development\08B. THE MODEL\FY26 Budget Model - Budget Director Recommendation, 2025.02.15 - Updated Fringe Rates.xlsx'
 OUTPUT = 'output/budget_book/'
 
 SHEETS_TO_LOAD = [

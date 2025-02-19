@@ -17,5 +17,6 @@ class Revenues(Sheet):
             'Sales of Assets \& Compensation for Losses', 
             'Sales \& Charges for Services', 
             'Fines, Forfeits, \& Penalties', 
+            'Taxes, Assessments, \& Interest',
             'Contributions \& Transfers'
         ]

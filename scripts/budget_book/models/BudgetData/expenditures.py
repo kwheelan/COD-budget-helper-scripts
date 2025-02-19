@@ -6,3 +6,17 @@ class Expenditures(Sheet):
 
     def __init__(self, filepath):
         super().__init__(filepath, 'Expenditures')
+
+    @staticmethod
+    def custom_order():
+        # Define the custom order for the 'Major Classification' column
+        return [
+            'Salaries \& Wages', 
+            'Employee Benefits', 
+            'Professional \& Contractual Services', 
+            'Operating Supplies', 
+            'Operating Services', 
+            'Equipment Acquisiton',
+            'Fixed Charges',
+            'Other Expenses'
+        ]

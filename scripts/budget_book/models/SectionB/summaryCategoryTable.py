@@ -16,7 +16,7 @@ class SummaryCategoryTable(BaseTable):
 
     def column_format(self, format=None):
         n_cols = len(self.table_data().columns)
-        return r'>{\arraybackslash}p{10.5cm}' + r'>{\centering\arraybackslash}p{2.5cm}' * (n_cols - 1) 
+        return r'>{\arraybackslash}p{11.25cm}' + r'>{\centering\arraybackslash}p{2.25cm}' * (n_cols - 1) 
 
     @staticmethod
     def header():

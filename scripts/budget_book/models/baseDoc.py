@@ -26,8 +26,7 @@ class BaseDoc:
 
         # Set page style to empty to remove page numbers
         doc.preamble.append(NoEscape(r'\pagestyle{empty}'))
-        # make page landscape
-        doc.append(NoEscape(r'\begin{landscape}'))
+        
         # define colors
         self.define_all_colors()
 
@@ -40,9 +39,11 @@ class BaseDoc:
         self.add_preamble()
         # create tables
         for table in table_list:
+            # make page landscape
+            self.doc.append(NoEscape(r'\begin{landscape}'))
             self.latex_table(self.doc, table)
-        # end matter
-        self.doc.append(NoEscape(r'\end{landscape}'))
+            self.doc.append(NoEscape(r'\end{landscape}'))
+            self.doc.append(NoEscape(r'\newpage'))
 
     def define_color(self, name, rgb: tuple[int, int, int]):
         r, g, b = rgb
@@ -81,6 +82,7 @@ class BaseDoc:
 
     def latex_table(self, doc, table):
         """ Create table from doc and table object """
+        
         with doc.create(Table(position='htbp!')):
             # table header
             self.header(doc, table)

@@ -108,7 +108,7 @@ class BaseTable:
         """ convert list of rows to full latex string """
         latex = self.divider().join(rows)
         header = r'\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
-        footer = r'\end{longtable}'
+        footer = r'\end{longtable}' + r'\arrayrulecolor{linegreen}'
         self.latex = header + latex + footer
     
     def process_latex(self):
@@ -162,6 +162,10 @@ class BaseTable:
         Returns:
         int: The number of numerical digits before the dash.
         """
+        if '- ' not in input_string:
+            return 0
+
+        # split
         parts = input_string.split('-')
         
         if parts:

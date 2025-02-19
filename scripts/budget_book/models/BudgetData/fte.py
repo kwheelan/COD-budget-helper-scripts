@@ -7,6 +7,14 @@ class FTEs(Sheet):
     def __init__(self, filepath):
         super().__init__(filepath, 'Positions')
 
+    def read_model(self, filepath, sheet):
+        tabs = pd.read_excel(filepath, sheet_name=[sheet], header=None)
+        df = tabs[sheet]
+        # then trim to table data 
+        # TODO: remove hard coding
+        df = df.iloc[3:, 0:49]
+        return df
+
     @staticmethod
     def value_columns():
         return ['FY25 Adopted FTE', 
@@ -45,7 +53,7 @@ class FTEs(Sheet):
                     if cc_df.shape[0] > 0:
                         cc_total = self.total_row(cc_df, cc, 'Job Title')
                         cc_df = pd.concat([cc_total, cc_df])
-                        final_df = pd.concat([final_df, cc_df])
+                        approp_df = pd.concat([approp_df, cc_df])
                 # add the approp total on top
                 if approp_df.shape[0] > 0:
                     approp_total = self.total_row_without_double_counting(approp_df, self.approp_name(approp), 2, 'Job Title')

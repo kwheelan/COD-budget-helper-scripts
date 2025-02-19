@@ -14,7 +14,7 @@ class Sheet(BaseDF):
         df = tabs[sheet]
         # then trim to table data 
         # TODO: remove hard coding
-        df = df.iloc[3:, 0:49]
+        df = df.iloc[11:, 0:49]
         return df
     
     @staticmethod

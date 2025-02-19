@@ -36,6 +36,7 @@ class FTEs(Sheet):
         for fund in funds:
             fund_df = df[df['Fund #'] == fund]
             fund_df = fund_df[self.value_columns() + ['Appropriation #', 'Cost Center Name', 'Job Title']]
+            processed_funds = pd.DataFrame()
             
             approps = list(set(fund_df['Appropriation #']))
             
@@ -57,12 +58,12 @@ class FTEs(Sheet):
                 if not approp_df.empty:
                     approp_total = self.total_row_without_double_counting(approp_df, self.approp_name(approp), 1, 'Job Title')
                     processed_approp = pd.concat([approp_total, processed_approp], ignore_index=True)
-                    fund_df = pd.concat([final_df, processed_approp], ignore_index=True)
+                    processed_funds = pd.concat([processed_funds, processed_approp], ignore_index=True)
 
             if not fund_df.empty:
                 fund_total = self.total_row_without_double_counting(fund_df, self.fund_name(fund), 3, 'Job Title')
-                fund_df = pd.concat([fund_total, fund_df], ignore_index=True)
-                final_df = pd.concat([final_df, fund_df], ignore_index=True)
+                processed_funds = pd.concat([fund_total, processed_funds], ignore_index=True)
+                final_df = pd.concat([final_df, processed_funds], ignore_index=True)
             
         # funds = list(set(self.processed['Fund #']))
         # final_df = pd.DataFrame()

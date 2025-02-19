@@ -27,8 +27,8 @@ class Sheet(BaseDF):
     
     def dept_name(self, dept):
         """ get department name from number """
-        df = self.processed[(self.processed['Department #'] == dept)]
-        return df['Department Name'][0]
+        df = self.processed[(self.processed['Department #'] == str(dept))]
+        return list(df['Department Name'])[0]
     
     @staticmethod
     def custom_order():

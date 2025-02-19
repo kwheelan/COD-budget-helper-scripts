@@ -107,12 +107,14 @@ class BaseTable:
     def update_latex(self, rows):
         """ convert list of rows to full latex string """
         latex = self.divider().join(rows)
-        header = r'\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
-        footer = r'\end{longtable}' + r'\arrayrulecolor{linegreen}'
+        header = r'\arrayrulecolor{black}\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
+        footer = r'\end{longtable}'
         self.latex = header + latex + footer
     
     def process_latex(self):
         """ Add any formatting and return latex """
+        if not self.table_data():
+            return None
         self.latex = self.default_latex()
         return self.latex   
 
@@ -129,7 +131,7 @@ class BaseTable:
         """ replace header for table """
         rows = self.latex_table_rows()
         rows[0] = new_header
-        header = r'\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
+        header = r'\arrayrulecolor{black}\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
         footer = r'\end{longtable}'
         self.latex = header + rows[0] + '\n' + self.divider().join(rows[1:]) + footer
 

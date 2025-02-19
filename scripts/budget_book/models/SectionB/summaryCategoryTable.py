@@ -30,14 +30,26 @@ class SummaryCategoryTable(ExcelTable):
     @staticmethod
     def divider():
         return r'\\ \arrayrulecolor{lineblue}\hline' + '\n'
+    
+    def last_row(self):
+        return self.n_rows() - 2
+    
+    def thick_line(self, color):
+        return rf'\arrayrulecolor{{{color}}}\specialrule{{1.5pt}}{{0pt}}{{0pt}}' + '\n'
+    
+    def outline_last_row(self, color):
+        rows = self.latex_table_rows()
+        ix = self.last_row()
+        rows[ix] = self.thick_line(color) + rows[ix] + r'\\' + '\n' + self.thick_line(color)
+        self.update_latex(rows[:-1])
 
     def process_latex(self):
         # self.rename_cols()
         self.latex = self.default_latex()
         #self.bold_cols(['Category', 'Variance FY25 vs FY26'])
-        self.bold_rows([0, 1, 8])
-        self.highlight_rows([1, 8], ['lightblue', 'lightblue'])
-        self.add_tab(col=0, row_list=range(2, self.n_rows()-2))
-        #self.merge_rows(col_name='Category')
+        self.bold_rows([0, 1, self.last_row()])
+        self.highlight_rows([1, self.last_row()], ['lightblue', 'lightblue'])
+        self.add_tab(col=0, row_list=range(2, self.last_row()))
+        self.outline_last_row('lineblue')
         self.replace_header(self.header())
         return self.latex

@@ -59,12 +59,13 @@ class BaseTable:
         """ Split into table data list by row """
         lines = self.latex.split('\n')
         # remove empty trailing space
-        if lines[-1] == '':
+        while lines[-1] == '':
             lines = lines[:-1]
         # Remove header and footer
         rows = lines[1:len(lines)-1]
         # add final new line to ensure \hline disappears
         rows = '\n'.join(rows) + '\n'
+        # print(rows.split(self.divider()))
         return rows.split(self.divider())
     
     def columns(self):

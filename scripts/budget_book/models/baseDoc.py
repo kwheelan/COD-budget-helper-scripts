@@ -15,7 +15,7 @@ class BaseDoc:
     def add_preamble(self):
         """ Create preamble for latex doc: packages, custom commands, etc """
         doc = self.doc
-        doc.preamble.append(Package('geometry', options='margin=1in'))
+        doc.preamble.append(Package('geometry', options='margin=1.5cm'))
         doc.preamble.append(Package('xcolor', options='table'))
         doc.preamble.append(Package('colortbl'))
         doc.preamble.append(Package('booktabs'))

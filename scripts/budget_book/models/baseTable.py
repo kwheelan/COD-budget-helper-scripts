@@ -128,6 +128,26 @@ class BaseTable:
         """ replace header for table """
         rows = self.latex_table_rows()
         rows[0] = new_header
+        header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n'
+        footer = r'\end{tabular}'
+        self.latex = header + rows[0] + '\n' + self.divider().join(rows[1:]) + footer
+
+    def n_rows(self):
+        return len(self.latex_table_rows())
+
+    def add_tab(self, col, row_list, length = '0.75cm'):
+        """ Add space to each column """
+        if type(col) is int:
+            col_ix = col
+        else:
+            col_ix = self.columns().index(col)
+        rows = self.latex_table_rows()
+        for i in row_list:
+            cells = rows[i].split(' & ')
+            # if cell isn't empty, add the tab
+            if cells[col_ix].strip() != '':
+                cells[col_ix] = rf'\hspace{{{length}}}' + cells[col_ix].strip()
+            rows[i] = ' & '.join(cells)
         self.update_latex(rows)
     
 class RowMerger:

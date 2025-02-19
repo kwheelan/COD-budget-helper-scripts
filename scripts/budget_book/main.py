@@ -16,7 +16,12 @@ def main():
     cat_fund_rev = RevFundCatTable(filepath, '10')
 
     # build doc
-    doc = BaseDoc([cat_exp, cat_rev, cat_fund_exp, cat_fund_rev], 'sample_tables')
+    doc = BaseDoc([
+        cat_exp, 
+        cat_rev, 
+        cat_fund_exp, 
+        cat_fund_rev], 
+        'sample_tables')
     doc.save_as_latex()
     doc.convert_to_pdf()
 

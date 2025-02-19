@@ -51,7 +51,7 @@ class SummaryCategoryTable(BaseTable):
         self.latex = self.default_latex()
         #self.bold_cols(['Category', 'Variance FY25 vs FY26'])
         self.bold_rows([0, 1, self.last_row()])
-        self.highlight_rows([1, self.last_row()], [self.primary_color, self.primary_color])
+        self.highlight_rows([1, self.last_row()], self.primary_color)
         self.add_tab(col=0, row_list=range(2, self.last_row()))
         self.outline_last_row(self.line_color)
         self.replace_header(self.header())
@@ -66,7 +66,7 @@ class ExpenditureCategories(SummaryCategoryTable):
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
                       'EXPENDITURES BY SUMMARY CATEGORY - ALL FUNDS',
-                      'DEPARTMENT' + dept_name.upper()]
+                      'DEPARTMENT ' + dept_name.upper()]
         super().__init__(custom_df, 'blue1', 'lineblue', main_header, subheaders)
         
     def table_data(self):
@@ -82,7 +82,7 @@ class RevenueCategories(SummaryCategoryTable):
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
                       'REVENUES BY SUMMARY CATEGORY - ALL FUNDS',
-                      'DEPARTMENT' + dept_name.upper()]
+                      'DEPARTMENT ' + dept_name.upper()]
         super().__init__(custom_df, 'green1', 'linegreen', main_header, subheaders)
 
     def table_data(self):

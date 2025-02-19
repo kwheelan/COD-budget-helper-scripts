@@ -99,9 +99,9 @@ class BaseTable:
         rows[row_num] = rf'\rowcolor{{{color}}}' + rows[row_num]
         self.update_latex(rows)
 
-    def highlight_rows(self, row_list, color_list):
+    def highlight_rows(self, row_list, color):
         """ color multiple rows at once """
-        for row, color in zip(row_list, color_list):
+        for row in row_list:
             self.highlight_row(row, color)
 
     def update_latex(self, rows):
@@ -150,6 +150,30 @@ class BaseTable:
                 cells[col_ix] = rf'\hspace{{{length}}}' + cells[col_ix].strip()
             rows[i] = ' & '.join(cells)
         self.update_latex(rows)
+
+    @staticmethod
+    def count_digits_before_dash(input_string):
+        """
+        Counts the number of numerical digits before the first dash in a string.
+
+        Parameters:
+        input_string (str): The input string from which to extract digits.
+
+        Returns:
+        int: The number of numerical digits before the dash.
+        """
+        parts = input_string.split('-')
+        
+        if parts:
+            # Get the part before the dash and strip any leading/trailing spaces
+            number_part = parts[0].strip()
+            
+            # Count the digits in this part
+            digit_count = sum(char.isdigit() for char in number_part)
+            
+            return digit_count
+        else:
+            return 0
     
 class RowMerger:
     def merge_rows(self, rows: list[str], col_ix: int):

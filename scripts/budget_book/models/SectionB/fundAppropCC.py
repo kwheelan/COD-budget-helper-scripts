@@ -13,50 +13,66 @@ class FundAppropCCTable(FundCategoryTable):
     def header():
         return r"""
         \specialrule{1.5pt}{0pt}{0pt}
-        \multicolumn{1}{|l}{\rule{0pt}{1.5cm}
-            \textbf{\shortstack{Department \# - Department Name\\ 
-            \hspace{-0.5cm}Fund \# - Fund Name\\
-            \hspace{0.25cm}Appropriation \# - Appropriation Name \\
-            \hspace{1cm}Cost Center \# - Cost Center Name}}
-        \rule[-0.25cm]{0pt}{0.5cm}} &
+        \multicolumn{1}{|l}{
+        \textbf{\shortstack[l]{
+        \rule{0pt}{2em} % Top space adjustment
+        Department \# - Department Name\\
+        \hspace{0.5cm}Fund \# - Fund Name\\
+        \hspace{1cm}Appropriation \# - Appropriation Name\\
+        \hspace{1.5cm}Cost Center \# - Cost Center Name}}
+        \rule[-1em]{0pt}{2em} % Bottom space adjustment
+        } &
         \textbf{\shortstack{FY2025 \\ Adopted}} &
         \textbf{\shortstack{FY2026 \\ Adopted}} &
         \textbf{\shortstack{FY2027 \\ Forecast}} &
         \textbf{\shortstack{FY2028 \\ Forecast}} &
-        \multicolumn{1}{c|}{\rule{0pt}{1cm}\textbf{\shortstack{FY2029 \\ Forecast}}\rule[-0.75cm]{0pt}{1cm}} \\
+        \multicolumn{1}{c|}{
+        \textbf{\shortstack{FY2029 \\ Forecast}}
+        } \\
         \specialrule{1.5pt}{0pt}{0pt}
         """
-
-    def process_latex(self):
-        # self.rename_cols()
-        self.latex = self.default_latex()
-        #self.bold_cols(['Category', 'Variance FY25 vs FY26'])
-        self.add_tab(col=0, row_list=range(2, self.last_row()))
-        self.add_tab(col=0, row_list=self.data_rows())
-        self.bold_rows([0, 1, self.last_row()] + self.fund_rows())
-        self.highlight_rows([1, self.last_row()], self.primary_color)
-        self.highlight_rows(self.fund_rows(), self.color2)
-        self.outline_last_row(self.line_color)
-        self.replace_header(self.header())
-        return self.latex
     
     def fund_rows(self):
         df = self.table_data()
         fund_rows = []
         # skip first total row
         for i in range(1, df.shape[0]):
-            first_char = df.iloc[i, 0][0]
-            if first_char in '1234567890':
-                # add one because latex counts headers as row 0
+            if self.count_digits_before_dash(df.iloc[i, 0]) == 4:
                 fund_rows.append(i+1)
         return fund_rows
-
-    def data_rows(self):
-        rows = []
-        for i in range(2, self.n_rows()-1):
-            if i not in self.fund_rows():
-                rows.append(i)
-        return rows
+    
+    def approp_rows(self):
+        df = self.table_data()
+        fund_rows = []
+        # skip first total row
+        for i in range(1, df.shape[0]):
+            if self.count_digits_before_dash(df.iloc[i, 0]) == 5:
+                fund_rows.append(i+1)
+        return fund_rows
+    
+    def cc_rows(self):
+        df = self.table_data()
+        fund_rows = []
+        # skip first total row
+        for i in range(1, df.shape[0]):
+            if self.count_digits_before_dash(df.iloc[i, 0]) == 6:
+                fund_rows.append(i+1)
+        return fund_rows
+    
+    def process_latex(self):
+        # self.rename_cols()
+        self.latex = self.default_latex()
+        # indent cc x 3, approp x2, fund x1
+        self.add_tab(col=0, row_list=self.fund_rows(), length='0.5cm')
+        self.add_tab(col=0, row_list=self.approp_rows(), length='1cm')
+        self.add_tab(col=0, row_list=self.cc_rows(), length='1.5cm')
+        self.bold_rows([0, 1, self.last_row()] + self.fund_rows()  + self.approp_rows())
+        self.highlight_rows([1, self.last_row()], self.primary_color)
+        self.highlight_rows(self.fund_rows(), self.color2)
+        self.highlight_rows(self.approp_rows(), self.color3)
+        self.outline_last_row(self.line_color)
+        self.replace_header(self.header())
+        return self.latex
     
 
 class ExpFullTable(FundAppropCCTable):

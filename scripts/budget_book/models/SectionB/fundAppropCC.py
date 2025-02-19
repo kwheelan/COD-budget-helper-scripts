@@ -83,7 +83,7 @@ class ExpFullTable(FundAppropCCTable):
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
-                      'EXPENDITURES BY SUMMARY CATEGORY - FUND DETAIL',
+                      r'FINANCIAL DETAIL BY DEPARTMENT, FUND, APPROPRIATION, \& COST CENTER - EXPENDITURES',
                       'DEPARTMENT ' + dept_name.upper()]
         super().__init__(custom_df, 'blue1', 
                          'blue2', 'blue3',
@@ -101,7 +101,7 @@ class RevFullTable(FundAppropCCTable):
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
-                      'REVENUES BY SUMMARY CATEGORY - FUND DETAIL',
+                      r'FINANCIAL DETAIL BY DEPARTMENT, FUND, APPROPRIATION, \& COST CENTER - REVENUES',
                       'DEPARTMENT ' + dept_name.upper()]
         super().__init__(custom_df, 'green1', 
                          'green2', 'green3', 
@@ -114,15 +114,39 @@ class FTEFullTable(FundAppropCCTable):
 
     def __init__(self, filepath, dept):
         self.dept = dept
-        custom_df = Revenues(filepath)
+        custom_df = FTEs(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
-                      'REVENUES BY SUMMARY CATEGORY - FUND DETAIL',
+                      r'POSITION DETAIL BY DEPARTMENT, FUND, APPROPRIATION, \& COST CENTER',
                       'DEPARTMENT ' + dept_name.upper()]
         super().__init__(custom_df, 'green1', 
                          'green2', 'green3', 
                          'linegreen', main_header, subheaders)
+        
+    @staticmethod
+    def header():
+        return r"""
+        \specialrule{1.5pt}{0pt}{0pt}
+        \multicolumn{1}{|l}{
+        \textbf{\shortstack[l]{
+        \rule{0pt}{2em} % Top space adjustment
+        Department \# - Department Name\\
+        \hspace{0.5cm}Fund \# - Fund Name\\
+        \hspace{1cm}Appropriation \# - Appropriation Name\\
+        \hspace{1.5cm}Cost Center \# - Cost Center Name\\
+        \hspace{2cm}Job Code \# - Job Title}}
+        \rule[-1em]{0pt}{4em} % Bottom space adjustment
+        } &
+        \textbf{\shortstack{FY2025 \\ Adopted}} &
+        \textbf{\shortstack{FY2026 \\ Adopted}} &
+        \textbf{\shortstack{FY2027 \\ Forecast}} &
+        \textbf{\shortstack{FY2028 \\ Forecast}} &
+        \multicolumn{1}{c|}{
+        \textbf{\shortstack{FY2029 \\ Forecast}}
+        } \\
+        \specialrule{1.5pt}{0pt}{0pt}
+        """
 
     def table_data(self):
         return self.table_df.group_by_fund_approp_cc(self.dept)

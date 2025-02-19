@@ -107,8 +107,8 @@ class BaseTable:
     def update_latex(self, rows):
         """ convert list of rows to full latex string """
         latex = self.divider().join(rows)
-        header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n'
-        footer = r'\end{tabular}'
+        header = r'\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
+        footer = r'\end{longtable}'
         self.latex = header + latex + footer
     
     def process_latex(self):
@@ -129,8 +129,8 @@ class BaseTable:
         """ replace header for table """
         rows = self.latex_table_rows()
         rows[0] = new_header
-        header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n'
-        footer = r'\end{tabular}'
+        header = r'\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
+        footer = r'\end{longtable}'
         self.latex = header + rows[0] + '\n' + self.divider().join(rows[1:]) + footer
 
     def n_rows(self):

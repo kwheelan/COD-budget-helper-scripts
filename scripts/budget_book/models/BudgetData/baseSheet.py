@@ -14,7 +14,7 @@ class Sheet(BaseDF):
         df = tabs[sheet]
         # then trim to table data 
         # TODO: remove hard coding
-        df = df.iloc[11:, 0:49]
+        df = df.iloc[3:, 0:49]
         return df
     
     @staticmethod
@@ -51,15 +51,11 @@ class Sheet(BaseDF):
             ',', '', regex=True).apply(
             pd.to_numeric, errors='coerce')
 
-        # Group by 'Major Classification' and aggregate
-        df = df.groupby(
-            'Object Classification').agg({
-                'FY25 Adopted' : 'sum', 
-                'FY26 Adopted': 'sum', 
-                'FY27 Forecast': 'sum', 
-                'FY28 Forecast': 'sum', 
-                'FY29 Forecast': 'sum'
-            }).reset_index()
+        # Build aggregation dictionary using list comprehension
+        agg_dict = {col: 'sum' for col in self.value_columns()}
+
+        # Group by 'Object Classification' and aggregate using the dictionary
+        df = df.groupby('Object Classification').agg(agg_dict).reset_index()
         
         # Remove rows where all specific columns have zero
         df = df[~(df[self.value_columns()].eq(0).all(axis=1))]
@@ -84,16 +80,12 @@ class Sheet(BaseDF):
             ',', '', regex=True).apply(
             pd.to_numeric, errors='coerce')
 
-        # Group by 'Major Classification' and aggregate
-        df = df.groupby(
-            col).agg({
-                'FY25 Adopted' : 'sum', 
-                'FY26 Adopted': 'sum', 
-                'FY27 Forecast': 'sum', 
-                'FY28 Forecast': 'sum', 
-                'FY29 Forecast': 'sum'
-            }).reset_index()
-        
+        # Build aggregation dictionary using list comprehension
+        agg_dict = {col: 'sum' for col in self.value_columns()}
+
+        # Group by col and aggregate using the dictionary
+        df = df.groupby(col).agg(agg_dict).reset_index()
+                
         # Remove rows where all specific columns have zero
         df = df[~(df[self.value_columns()].eq(0).all(axis=1))]
 

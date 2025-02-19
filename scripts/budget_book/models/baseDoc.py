@@ -23,6 +23,9 @@ class BaseDoc:
         doc.preamble.append(Package('pdflscape'))
         doc.preamble.append(Package('array'))
         doc.preamble.append(Package('roboto', options=['sfdefault', 'condensed']))
+        doc.preamble.append(Package('longtable'))
+        doc.preamble.append(Package('lastpage'))
+        doc.preamble.append(Package('lmodern'))
 
         # Set page style to empty to remove page numbers
         doc.preamble.append(NoEscape(r'\pagestyle{empty}'))
@@ -58,6 +61,9 @@ class BaseDoc:
         self.define_color('green2', (198, 224, 180))
         self.define_color('green3', (226, 239, 218))
         self.define_color('linegreen', (84, 130, 53))
+        self.define_color('orange1', (244, 176, 132))
+        self.define_color('orange2', (252, 228, 214))
+        self.define_color('lineorange', (237, 125, 49))
 
     @staticmethod
     def header(doc, table, bold = True, special_main = False):
@@ -83,18 +89,17 @@ class BaseDoc:
     def latex_table(self, doc, table):
         """ Create table from doc and table object """
         
-        with doc.create(Table(position='htbp!')):
-            # table header
-            self.header(doc, table)
+        # table header
+        self.header(doc, table)
 
-            # Table with no extra borders, smaller font, and bold headers
-            doc.append(NoEscape(r"""
-                \renewcommand{\arraystretch}{1.3} % Increase the row height
-                \setlength{\tabcolsep}{4pt}       % Add padding
-            """))
+        # Table with no extra borders, smaller font, and bold headers
+        doc.append(NoEscape(r"""
+            \renewcommand{\arraystretch}{1.3} % Increase the row height
+            \setlength{\tabcolsep}{4pt}       % Add padding
+        """))
 
-            # Manually append the DataFrame-to-LaTeX converted table data
-            doc.append(NoEscape(table.process_latex()))
+        # Manually append the DataFrame-to-LaTeX converted table data
+        doc.append(NoEscape(table.process_latex()))
 
     def save_as_latex(self):
         self.create_doc(self.table_list)

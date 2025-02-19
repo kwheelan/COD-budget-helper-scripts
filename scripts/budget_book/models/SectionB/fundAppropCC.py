@@ -1,7 +1,6 @@
-from . import SummaryCategoryTable
-from models.BudgetData import *
+from .fundCategoryTable import *
 
-class FundCategoryTable(SummaryCategoryTable):
+class FundAppropCCTable(FundCategoryTable):
 
     def __init__(self, custom_df, primary_color, 
                  color2, color3,
@@ -17,8 +16,9 @@ class FundCategoryTable(SummaryCategoryTable):
         \specialrule{1.5pt}{0pt}{0pt}
         \multicolumn{1}{|l}{\rule{0pt}{1.5cm}
             \textbf{\shortstack{Department \# - Department Name\\ 
-            \hspace{-0.5cm}Fund \# - Fund Name \\
-            \hspace{0.5cm}Summary Category}}
+            \hspace{-0.5cm}Fund \# - Fund Name\\
+            \hspace{0.25cm}Appropriation \# - Appropriation Name \\
+            \hspace{1cm}Cost Center \# - Cost Center Name}}
         \rule[-0.25cm]{0pt}{0.5cm}} &
         \textbf{\shortstack{FY2025 \\ Adopted}} &
         \textbf{\shortstack{FY2026 \\ Adopted}} &
@@ -59,7 +59,8 @@ class FundCategoryTable(SummaryCategoryTable):
                 rows.append(i)
         return rows
     
-class ExpFundCatTable(FundCategoryTable):
+
+class ExpFullTable(FundAppropCCTable):
 
     def __init__(self, filepath, dept):
         self.dept = dept
@@ -77,7 +78,24 @@ class ExpFundCatTable(FundCategoryTable):
         return self.table_df.group_by_category_and_fund(self.dept)
 
 
-class RevFundCatTable(FundCategoryTable):
+class RevFullTable(FundAppropCCTable):
+
+    def __init__(self, filepath, dept):
+        self.dept = dept
+        custom_df = Revenues(filepath)
+        dept_name = custom_df.dept_name(dept)
+        main_header = 'CITY OF DETROIT'
+        subheaders = ['BUDGET DEVELOPMENT',
+                      'REVENUES BY SUMMARY CATEGORY - FUND DETAIL',
+                      'DEPARTMENT ' + dept_name.upper()]
+        super().__init__(custom_df, 'green1', 
+                         'green2', 'green3', 
+                         'linegreen', main_header, subheaders)
+
+    def table_data(self):
+        return self.table_df.group_by_category_and_fund(self.dept)
+    
+class FTEFullTable(FundAppropCCTable):
 
     def __init__(self, filepath, dept):
         self.dept = dept

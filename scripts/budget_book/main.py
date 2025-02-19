@@ -8,7 +8,6 @@ from constants import filepath
 import warnings
 
 def main():
-    warnings.filterwarnings("ignore")
     # tables
     cat_exp = ExpenditureCategories(filepath, '10')
     cat_rev = RevenueCategories(filepath, '10')
@@ -28,8 +27,9 @@ def main():
 def test():
     # Expenditures(filepath, 'Expenditures')
     rev = Revenues(filepath)
-    print(rev.group_by_category_and_fund('10'))
+    print(rev.group_by_fund_approp_cc('10'))
 
 if __name__ == '__main__':
-    # test()
-    main()
+    warnings.filterwarnings("ignore")
+    test()
+    # main()

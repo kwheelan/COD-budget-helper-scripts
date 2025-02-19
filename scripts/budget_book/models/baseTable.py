@@ -49,7 +49,11 @@ class BaseTable:
         latex = latex.replace("\\midrule\n", "")
         latex = latex.replace("\\bottomrule\n", "")
         # add horizontal lines
-        return latex.replace(r'\\', r'\\ \hline')
+        return latex.replace(r'\\' + '\n', self.divider())
+    
+    @staticmethod
+    def divider():
+        return r'\\ \hline' + '\n'
 
     def latex_table_rows(self):
         """ Split into table data list by row """
@@ -61,8 +65,7 @@ class BaseTable:
         rows = lines[1:len(lines)-1]
         # add final new line to ensure \hline disappears
         rows = '\n'.join(rows) + '\n'
-        divider = r'\\ \hline' + '\n'
-        return rows.split(divider)
+        return rows.split(self.divider())
     
     def columns(self):
         return list(self.table_data().columns)
@@ -102,8 +105,7 @@ class BaseTable:
 
     def update_latex(self, rows):
         """ convert list of rows to full latex string """
-        divider = r'\\ \hline' + '\n'
-        latex = divider.join(rows)
+        latex = self.divider().join(rows)
         header = r'\begin{tabular}' + rf'{{{self.column_format()}}}' + '\n'
         footer = r'\end{tabular}'
         self.latex = header + latex + footer
@@ -120,6 +122,12 @@ class BaseTable:
         rows = self.latex_table_rows()[2:]
         col_ix = self.columns().index(col_name)
         rows = headers + RowMerger().merge_rows(rows, col_ix)
+        self.update_latex(rows)
+
+    def replace_header(self, new_header):
+        """ replace header for table """
+        rows = self.latex_table_rows()
+        rows[0] = new_header
         self.update_latex(rows)
     
 class RowMerger:

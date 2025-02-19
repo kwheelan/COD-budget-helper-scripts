@@ -7,8 +7,10 @@ class SummaryCategoryTable(ExcelTable):
     Expenditures and Revenues by Summary Category
     """
 
-    def __init__(self, custom_df):
+    def __init__(self, custom_df, primary_color, line_color):
         super().__init__(custom_df)
+        self.primary_color = primary_color
+        self.line_color = line_color
 
     def column_format(self, format=None):
         n_cols = len(self.table_data().columns)
@@ -27,9 +29,8 @@ class SummaryCategoryTable(ExcelTable):
         \specialrule{1.5pt}{0pt}{0pt}
         """
     
-    @staticmethod
-    def divider():
-        return r'\\ \arrayrulecolor{lineblue}\hline' + '\n'
+    def divider(self):
+        return rf'\\ \arrayrulecolor{{{self.line_color}}}\hline' + '\n'
     
     def last_row(self):
         return self.n_rows() - 2
@@ -48,8 +49,19 @@ class SummaryCategoryTable(ExcelTable):
         self.latex = self.default_latex()
         #self.bold_cols(['Category', 'Variance FY25 vs FY26'])
         self.bold_rows([0, 1, self.last_row()])
-        self.highlight_rows([1, self.last_row()], ['lightblue', 'lightblue'])
+        self.highlight_rows([1, self.last_row()], [self.primary_color, self.primary_color])
         self.add_tab(col=0, row_list=range(2, self.last_row()))
-        self.outline_last_row('lineblue')
+        self.outline_last_row(self.line_color)
         self.replace_header(self.header())
         return self.latex
+    
+class ExpenditureCategories(SummaryCategoryTable):
+
+    def __init__(self, custom_df):
+        super().__init__(custom_df, 'blue1', 'lineblue')
+
+
+class RevenueCategories(SummaryCategoryTable):
+
+    def __init__(self, custom_df):
+        super().__init__(custom_df, 'green1', 'linegreen')

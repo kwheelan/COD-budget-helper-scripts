@@ -49,9 +49,13 @@ class BaseDoc:
         self.doc.append(NoEscape(rf'\definecolor{{{name}}}{{RGB}}{{{r},{g},{b}}}'))
 
     def define_all_colors(self):
-        self.define_color('lightblue', (155, 194, 230))
+        self.define_color('blue1', (155, 194, 230))
+        self.define_color('blue2', (189, 215, 238))
+        self.define_color('blue3', (221, 235, 247))
         self.define_color('lineblue', (47, 117, 181))
-        self.define_color('lightgreen', (169, 208, 142))
+        self.define_color('green1', (169, 208, 142))
+        self.define_color('green2', (198, 224, 180))
+        self.define_color('green3', (226, 239, 218))
         self.define_color('linegreen', (84, 130, 53))
 
     @staticmethod

@@ -159,7 +159,6 @@ class FTEFullTable(FundAppropCCTable):
         for i in range(1, df.shape[0]):
             if df.iloc[i, 0] in jobs:
                 fund_rows.append(i+1)
-        print(fund_rows)
         return fund_rows
     
     def cc_rows(self):

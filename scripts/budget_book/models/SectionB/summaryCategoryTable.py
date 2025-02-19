@@ -1,6 +1,7 @@
 
 from models import BaseTable
-from models.modelDF import Expenditures
+from models.BudgetData.expenditures import Expenditures
+from models.BudgetData.revenues import Revenues
 
 class SummaryCategoryTable(BaseTable):
     """
@@ -59,25 +60,30 @@ class SummaryCategoryTable(BaseTable):
 class ExpenditureCategories(SummaryCategoryTable):
 
     def __init__(self, filepath, dept):
+        self.dept = dept
         custom_df = Expenditures(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
                       'EXPENDITURES BY SUMMARY CATEGORY - ALL FUNDS',
-                      dept_name.upper()]
+                      'DEPARTMENT' + dept_name.upper()]
         super().__init__(custom_df, 'blue1', 'lineblue', main_header, subheaders)
         
     def table_data(self):
-        return self.table_df.group_by_category('10')
+        return self.table_df.group_by_category(self.dept)
 
 
 class RevenueCategories(SummaryCategoryTable):
 
     def __init__(self, filepath, dept):
-        custom_df = Expenditures(filepath)
+        self.dept = dept
+        custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
         subheaders = ['BUDGET DEVELOPMENT',
-                      'EXPENDITURES BY SUMMARY CATEGORY - ALL FUNDS',
-                      dept_name.upper()]
+                      'REVENUES BY SUMMARY CATEGORY - ALL FUNDS',
+                      'DEPARTMENT' + dept_name.upper()]
         super().__init__(custom_df, 'green1', 'linegreen', main_header, subheaders)
+
+    def table_data(self):
+        return self.table_df.group_by_category(self.dept)

@@ -103,7 +103,8 @@ class Sheet(BaseDF):
     def filter_by_dept(self, dept):
         # filter by dept
         df = self.processed
-        return df[(df['Department #'] == dept)]
+        df = df[(df['Department #'] == dept)]
+        return df
 
     def group_by_category(self, dept):
         # filter by dept
@@ -132,7 +133,7 @@ class Sheet(BaseDF):
 
     def group_by_category_and_fund(self, dept):
         df = self.filter_by_dept(dept)
-        funds = list(set(self.processed['Fund #']))
+        funds = sorted(set(self.processed['Fund #']))
         final_df = pd.DataFrame()
         for fund in funds:
             # for each fund, get sums by obj category
@@ -162,7 +163,7 @@ class Sheet(BaseDF):
             ',', '', regex=True).apply(
             pd.to_numeric, errors='coerce')
         
-        funds = list(set(self.processed['Fund #']))
+        funds = sorted(set(self.processed['Fund #']))
         final_df = pd.DataFrame()
         for fund in funds:
             # for each fund, get sums by obj category
@@ -170,7 +171,7 @@ class Sheet(BaseDF):
             fund_df = fund_df[self.value_columns() + 
                               ['Appropriation #', 'Cost Center Name']]
             # get approps
-            approps = list(set(fund_df['Appropriation #']))
+            approps = sorted(set(fund_df['Appropriation #']))
             approp_df = pd.DataFrame()
             for approp in approps:
                 approp_df = fund_df[fund_df['Appropriation #'] == approp]

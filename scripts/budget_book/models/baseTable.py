@@ -116,8 +116,8 @@ class BaseTable:
     def update_latex(self, rows):
         """ convert list of rows to full latex string """
         latex = self.divider().join(rows)
-        header = r'\arrayrulecolor{black}\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
         footer = r'\end{longtable}'
+        header = r'\arrayrulecolor{black}\begin{longtable}' + rf'{{{self.column_format()}}}' + '\n'
         self.latex = header + latex + footer
     
     def process_latex(self):

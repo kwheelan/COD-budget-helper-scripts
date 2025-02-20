@@ -1,4 +1,5 @@
 from .fundCategoryTable import *
+from .tableHeader import *
 
 class FundAppropCCTable(FundCategoryTable):
 
@@ -134,29 +135,8 @@ class FTEFullTable(FundAppropCCTable):
                          'orange2',  None,
                          'lineorange', main_header, subheaders)
         
-    @staticmethod
-    def header():
-        return r"""
-        \specialrule{1.5pt}{0pt}{0pt}
-        \multicolumn{1}{|l}{
-        \textbf{\shortstack[l]{
-        \rule{0pt}{2em} % Top space adjustment
-        Department \# - Department Name\\
-        \hspace{0.5cm}Fund \# - Fund Name\\
-        \hspace{1cm}Appropriation \# - Appropriation Name\\
-        \hspace{1.5cm}Cost Center \# - Cost Center Name\\
-        \hspace{2cm}Job Code \# - Job Title}}
-        \rule[-1em]{0pt}{4em} % Bottom space adjustment
-        } &
-        \textbf{\shortstack{FY2025 \\ Adopted}} &
-        \textbf{\shortstack{FY2026 \\ Adopted}} &
-        \textbf{\shortstack{FY2027 \\ Forecast}} &
-        \textbf{\shortstack{FY2028 \\ Forecast}} &
-        \multicolumn{1}{c|}{
-        \textbf{\shortstack{FY2029 \\ Forecast}}
-        } \\
-        \specialrule{1.5pt}{0pt}{0pt}
-        """
+    def header(self):
+        return Header.fte()
 
     def table_data(self):
         if not self.table_df.dept_name(self.dept):

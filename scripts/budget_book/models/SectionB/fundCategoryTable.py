@@ -1,5 +1,6 @@
 from . import SummaryCategoryTable
 from models.BudgetData import *
+from .tableHeader import Header
 
 class FundCategoryTable(SummaryCategoryTable):
 
@@ -11,22 +12,8 @@ class FundCategoryTable(SummaryCategoryTable):
         super().__init__(custom_df, primary_color, 
                          line_color, main_header, subheaders)
         
-    @staticmethod
-    def header():
-        return r"""
-        \specialrule{1.5pt}{0pt}{0pt}
-        \multicolumn{1}{|l}{\rule{0pt}{1.5cm}
-            \textbf{\shortstack{Department \# - Department Name\\ 
-            \hspace{-0.5cm}Fund \# - Fund Name \\
-            \hspace{0.5cm}Summary Category}}
-        \rule[-0.25cm]{0pt}{0.5cm}} &
-        \textbf{\shortstack{FY2025 \\ Adopted}} &
-        \textbf{\shortstack{FY2026 \\ Adopted}} &
-        \textbf{\shortstack{FY2027 \\ Forecast}} &
-        \textbf{\shortstack{FY2028 \\ Forecast}} &
-        \multicolumn{1}{c|}{\rule{0pt}{1cm}\textbf{\shortstack{FY2029 \\ Forecast}}\rule[-0.75cm]{0pt}{1cm}} \\
-        \specialrule{1.5pt}{0pt}{0pt}
-        """
+    def header(self):
+        return Header.fund_categories(self.main(), self.subheaders())
 
     def process_latex(self):
         # self.rename_cols()

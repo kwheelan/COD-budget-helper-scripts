@@ -53,7 +53,7 @@ class BaseTable:
             column_format=self.column_format()
         )
         # replace zeroes
-        latex = latex.replace('& 0 &', '& - &')
+        latex = latex.replace('& 0 ', '& - ')
          # Remove midrule, etc
         latex = latex.replace("\\toprule\n", "")
         latex = latex.replace("\\midrule\n", "")

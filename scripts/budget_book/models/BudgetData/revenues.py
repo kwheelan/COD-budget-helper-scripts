@@ -18,5 +18,6 @@ class Revenues(Sheet):
             'Sales \& Charges for Services', 
             'Fines, Forfeits, \& Penalties', 
             'Taxes, Assessments, \& Interest',
+            'Licenses, Permits, \& Inspection Charges',
             'Contributions \& Transfers'
         ]

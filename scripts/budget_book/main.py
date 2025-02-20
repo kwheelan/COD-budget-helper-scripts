@@ -12,20 +12,20 @@ rev = Revenues(filepath)
 positions = FTEs(filepath)
 
 def all_tables(filepath, dept):
-    # cat_exp = ExpenditureCategories(filepath, dept, exp)
-    # cat_rev = RevenueCategories(filepath, dept, rev)
-    # cat_fund_exp = ExpFundCatTable(filepath, dept, exp)
-    # cat_fund_rev = RevFundCatTable(filepath, dept, rev)
-    # all_exp = ExpFullTable(filepath, dept, exp)
-    # all_rev = RevFullTable(filepath, dept, rev)
+    cat_exp = ExpenditureCategories(filepath, dept, exp)
+    cat_rev = RevenueCategories(filepath, dept, rev)
+    cat_fund_exp = ExpFundCatTable(filepath, dept, exp)
+    cat_fund_rev = RevFundCatTable(filepath, dept, rev)
+    all_exp = ExpFullTable(filepath, dept, exp)
+    all_rev = RevFullTable(filepath, dept, rev)
     all_fte = FTEFullTable(filepath, dept, positions)
     return [
-        # cat_exp, 
-        # cat_rev, 
-        # cat_fund_exp, 
-        # cat_fund_rev,
-        # all_exp,
-        # all_rev,
+        cat_exp, 
+        cat_rev, 
+        cat_fund_exp, 
+        cat_fund_rev,
+        all_exp,
+        all_rev,
         all_fte
         ]
 

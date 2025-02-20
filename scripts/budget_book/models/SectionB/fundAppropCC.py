@@ -136,7 +136,7 @@ class FTEFullTable(FundAppropCCTable):
                          'lineorange', main_header, subheaders)
         
     def header(self):
-        return Header.fte()
+        return Header.fte(self.main(), self.subheaders())
 
     def table_data(self):
         if not self.table_df.dept_name(self.dept):

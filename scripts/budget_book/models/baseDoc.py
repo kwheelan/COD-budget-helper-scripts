@@ -2,6 +2,8 @@ from pylatex import Document, Section, Subsection, Table, NoEscape, Package
 # from . import baseTable
 import os
 from constants import OUTPUT
+import subprocess
+
 
 class BaseDoc:
     """
@@ -24,8 +26,6 @@ class BaseDoc:
         doc.preamble.append(Package('array'))
         doc.preamble.append(Package('roboto', options=['sfdefault', 'condensed']))
         doc.preamble.append(Package('longtable'))
-        doc.preamble.append(Package('lastpage'))
-        doc.preamble.append(Package('lmodern'))
 
         # Set page style to empty to remove page numbers
         doc.preamble.append(NoEscape(r'\pagestyle{empty}'))
@@ -107,8 +107,21 @@ class BaseDoc:
         # Save the document to a .tex file
         self.doc.generate_tex(self.save_as)
 
+    def compile_latex(self):
+        # Compile the LaTeX file using subprocess; disable clean to keep auxiliary files
+        # subprocess.run(['pdflatex', '-interaction=nonstopmode', self.save_as])
+        subprocess.run([
+            'pdflatex',
+            '-interaction=nonstopmode',
+            '-output-directory', os.path.dirname(self.save_as),  # Specify the output directory
+            self.save_as
+        ], check=True)
+
     def convert_to_pdf(self):
+
         print('converting to pdf...')
+        self.compile_latex()
+
         self.doc.generate_pdf(self.save_as, clean_tex=False, compiler='pdflatex')
 
 

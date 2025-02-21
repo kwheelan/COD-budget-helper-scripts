@@ -64,6 +64,7 @@ class BaseDoc:
         self.define_color('orange1', (244, 176, 132))
         self.define_color('orange2', (252, 228, 214))
         self.define_color('lineorange', (237, 125, 49))
+        self.define_color('detroitgreen', (159, 213, 179))
 
     @staticmethod
     def header(doc, table, bold = True, special_main = False):

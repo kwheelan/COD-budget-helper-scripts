@@ -131,3 +131,74 @@ class Summary(BaseDF):
         df = pd.concat([df, total])
 
         return df
+    
+    def table4(self, dept, filepath):
+        df = self.ftes.filter_by_dept(dept)
+
+        cols = ['FY25 Adopted FTE', 
+                'FY26 Adopted FTE',
+                'FY27 Forecast FTE',
+                'FY28 Forecast FTE',
+                'FY29 Forecast FTE']
+
+        # convert to numeric
+        df[cols] = df[cols].replace(
+            ',', '', regex=True).apply(
+            pd.to_numeric, errors='coerce')
+        
+        # separate GF from all funds
+        df['Fund #'] = df['Fund #'].replace(',', '', regex=True)
+        general_fund = df[df['Fund #'] == '1000']
+        non_gf = df[df['Fund #'] != '1000']
+        # Note: I guess no ARPA positions for FY25+
+
+        # Build aggregation dictionary using list comprehension
+        agg_dict = {col: 'sum' for col in cols}
+
+        # sum for every year
+        general_fund = general_fund.agg(agg_dict).reset_index().set_index('index').transpose()
+        non_gf = non_gf.agg(agg_dict).reset_index().set_index('index').transpose()
+
+        # combine rows
+        df = pd.concat([general_fund, non_gf], axis=0, ignore_index=True).reset_index(drop=True)
+
+        # add ARPA row on bottom
+        arpa = pd.DataFrame({col: [0] for col in cols})
+        df = pd.concat([df, arpa]).reset_index(drop=True)
+
+        # Add first column
+        row_names = pd.DataFrame({'title': ['General Fund', 'Non-General Fund', 'ARPA']})
+        # replace 2024 actual with current counts
+        current = self.current_positions(dept, filepath)
+        df = pd.concat([row_names, current, df], axis=1)
+
+        # add total row on bottom
+        total = self.total_row(df, 'Total Positions', cols + ['Actual'])
+        df = pd.concat([df, total]).reset_index(drop=True)
+
+        return df
+    
+    def current_positions(self, dept, filepath):
+        """ Get counts of actuals right now """
+
+        sheet = 'Section B Dept Summary'
+        tabs = pd.read_excel(filepath, sheet_name=[sheet], header=None)
+        df = tabs[sheet]
+        # then trim to table data 
+        df = df.iloc[3:38, 9:14]
+        df = BaseDF.adjust_headers(df)
+        # Filter to department
+        dept_df = df[df['Dept'] == int(dept)]
+        data = [list(dept_df['GF'])[0], 
+                list(dept_df['NonGF'])[0], 
+                list(dept_df['ARPA'])[0]]
+        # build and return df
+        df = pd.DataFrame({'Actual' : data})
+        df['Actual'] = df['Actual'].apply(pd.to_numeric, errors='coerce')
+        return df
+
+
+
+
+
+        

@@ -16,22 +16,23 @@ def all_tables(filepath, dept):
     sum1 = SummaryTable1(summary, 'detroitgreen', dept)
     sum2 = SummaryTable2(summary, 'detroitgreen', dept)
     sum3 = SummaryTable3(summary, 'detroitgreen', dept)
-    # cat_exp = ExpenditureCategories(filepath, dept, exp)
-    # cat_rev = RevenueCategories(filepath, dept, rev)
-    # cat_fund_exp = ExpFundCatTable(filepath, dept, exp)
-    # cat_fund_rev = RevFundCatTable(filepath, dept, rev)
-    # all_exp = ExpFullTable(filepath, dept, exp)
-    # all_rev = RevFullTable(filepath, dept, rev)
-    # all_fte = FTEFullTable(filepath, dept, positions)
+    sum4 = SummaryTable4(summary, 'detroitgreen', dept, filepath=filepath)
+    cat_exp = ExpenditureCategories(filepath, dept, exp)
+    cat_rev = RevenueCategories(filepath, dept, rev)
+    cat_fund_exp = ExpFundCatTable(filepath, dept, exp)
+    cat_fund_rev = RevFundCatTable(filepath, dept, rev)
+    all_exp = ExpFullTable(filepath, dept, exp)
+    all_rev = RevFullTable(filepath, dept, rev)
+    all_fte = FTEFullTable(filepath, dept, positions)
     return [
-        [sum1, sum2, sum3],
-        # cat_exp, 
-        # cat_rev, 
-        # cat_fund_exp, 
-        # cat_fund_rev,
-        # all_exp,
-        # all_rev,
-        # all_fte
+        [sum1, sum2, sum3, sum4],
+        cat_exp, 
+        cat_rev, 
+        cat_fund_exp, 
+        cat_fund_rev,
+        all_exp,
+        all_rev,
+        all_fte
         ]
 
 def main(depts):
@@ -70,39 +71,39 @@ def main(depts):
 def test():
     # Expenditures(filepath, 'Expenditures')
     sum = Summary(rev, exp, positions)
-    print(sum.table3('10'))
+    print(sum.table4('13', filepath))
     # print(sum.table1_part2('10'))
 
 depts = [
     '10', 
-    # '13', 
-    # '18', 
-    # '19', 
-    # '20',
-    # '23',
-    # '24',
-    # '25',
-    # '28',
-    # '29',
-    # '31',
-    # '32',
-    # '33',
-    # '34',
-    # '35',
-    # '36',
-    # '38',
-    # '43',
-    # '45',
-    # '47',
-    # '50',
-    # '51',
-    # '52',
-    # '53',
-    # '54',
-    # '60',
-    # '70',
-    # '71',
-    # '72'
+    '13', 
+    '18', 
+    '19', 
+    '20',
+    '23',
+    '24',
+    '25',
+    '28',
+    '29',
+    '31',
+    '32',
+    '33',
+    '34',
+    '35',
+    '36',
+    '38',
+    '43',
+    '45',
+    '47',
+    '50',
+    '51',
+    '52',
+    '53',
+    '54',
+    '60',
+    '70',
+    '71',
+    '72'
     ]
 
 if __name__ == '__main__':

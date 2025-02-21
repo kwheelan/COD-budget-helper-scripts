@@ -2,6 +2,7 @@
 from models.baseTable import BaseTable
 from models.BudgetData.summary_tables import Summary
 from .tableHeader import Header
+from models.baseDF import BaseDF
 
 class SummaryTable(BaseTable):
     """
@@ -110,6 +111,29 @@ class SummaryTable3(SummaryTable):
     
     def header(self):
         return Header.summary_table3()
+
+    def column_format(self):
+        n_cols = len(self.table_data().columns)
+        return r'| >{\raggedleft\arraybackslash}p{4cm}' + r'| >{\raggedleft\arraybackslash}p{2.5cm}' * (n_cols - 1) + '|' 
+    
+class SummaryTable4(SummaryTable):
+
+    def __init__(self, custom_df : Summary, primary_color, dept, filepath):
+        super().__init__(custom_df, 'Positions (by FTE)', [])
+        self.primary_color = primary_color
+        self.dept = dept
+        self.filepath = filepath
+
+    def table_data(self):
+        df = self.table_df.table4(self.dept, self.filepath)
+        df = df.map(BaseDF.round_floats)
+        return df
+
+    def main(self):
+        return 'Positions (by FTE)'
+    
+    def header(self):
+        return Header.summary_table4()
 
     def column_format(self):
         n_cols = len(self.table_data().columns)

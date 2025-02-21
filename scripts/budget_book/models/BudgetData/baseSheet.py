@@ -9,7 +9,8 @@ class Sheet(BaseDF):
         df = self.read_model(filepath, sheet)
         super().__init__(df)
 
-    def read_model(self, filepath, sheet):
+    @staticmethod
+    def read_model(filepath, sheet):
         tabs = pd.read_excel(filepath, sheet_name=[sheet], header=None)
         df = tabs[sheet]
         # then trim to table data 

@@ -1,9 +1,9 @@
-from pylatex import Document, Section, Subsection, Table, NoEscape, Package
+from pylatex import Document, NoEscape, Package
 # from . import baseTable
 import os
 from constants import OUTPUT
 import subprocess
-from .SectionB import SummaryTable
+from .SectionB import SummaryTable, SummaryTable2, SummaryTable3
 
 
 class BaseDoc:
@@ -114,14 +114,18 @@ class BaseDoc:
         doc.append(NoEscape(r'\begin{center}'))
         doc.append(NoEscape(rf'\huge \textbf{{{table1.title()}}} \normalsize'))
         doc.append(NoEscape(r'\end{center}'))
-        doc.append(NoEscape(r'\begin{flushleft}'))
 
         # Manually append the DataFrame-to-LaTeX converted table data
         for table in table_list:
             if table.main():
-                doc.append(NoEscape('\n' + rf'\hspace{{1.2cm}}\large\textbf{{{table.main()}}}\normalsize'))
+                doc.append(NoEscape('\n' + rf'\hspace{{0.9cm}}\large\textbf{{{table.main()}}}\normalsize'))
+                doc.append(NoEscape(r'\vspace{-0.25cm}'))
+            if type(table) is SummaryTable2:
+                doc.append(NoEscape(r'\vspace{-0.85cm}'))
+            elif type(table) is SummaryTable3:
+                doc.append(NoEscape(r'\setlength\LTleft{1.4cm}'))
             doc.append(NoEscape(table.process_latex()))
-        doc.append(NoEscape(r'\end{flushleft}'))
+            doc.append(NoEscape(r'\vspace{0.5cm}'))
         self.doc.append(NoEscape(r'\end{landscape}'))
         self.doc.append(NoEscape(r'\newpage'))
 

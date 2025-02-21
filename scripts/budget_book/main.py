@@ -12,21 +12,21 @@ rev = Revenues(filepath)
 positions = FTEs(filepath)
 
 def all_tables(filepath, dept):
-    cat_exp = ExpenditureCategories(filepath, dept, exp)
-    cat_rev = RevenueCategories(filepath, dept, rev)
-    cat_fund_exp = ExpFundCatTable(filepath, dept, exp)
-    cat_fund_rev = RevFundCatTable(filepath, dept, rev)
+    # cat_exp = ExpenditureCategories(filepath, dept, exp)
+    # cat_rev = RevenueCategories(filepath, dept, rev)
+    # cat_fund_exp = ExpFundCatTable(filepath, dept, exp)
+    # cat_fund_rev = RevFundCatTable(filepath, dept, rev)
     all_exp = ExpFullTable(filepath, dept, exp)
-    all_rev = RevFullTable(filepath, dept, rev)
-    all_fte = FTEFullTable(filepath, dept, positions)
+    # all_rev = RevFullTable(filepath, dept, rev)
+    # all_fte = FTEFullTable(filepath, dept, positions)
     return [
-        cat_exp, 
-        cat_rev, 
-        cat_fund_exp, 
-        cat_fund_rev,
+        # cat_exp, 
+        # cat_rev, 
+        # cat_fund_exp, 
+        # cat_fund_rev,
         all_exp,
-        all_rev,
-        all_fte
+        # all_rev,
+        # all_fte
         ]
 
 def main(depts):
@@ -67,7 +67,13 @@ def test():
     rev = FTEs(filepath)
     print(rev.group_by_fund_approp_cc('10'))
 
-depts = ['10']
+depts = [
+    # '10', 
+    # '13', 
+    # '18', 
+    '19', 
+    # '20'
+    ]
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")

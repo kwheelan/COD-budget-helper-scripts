@@ -19,5 +19,6 @@ class Revenues(Sheet):
             'Fines, Forfeits, \& Penalties', 
             'Taxes, Assessments, \& Interest',
             'Licenses, Permits, \& Inspection Charges',
-            'Contributions \& Transfers'
+            'Contributions \& Transfers',
+            'Miscellaneous'
         ]

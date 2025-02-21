@@ -16,7 +16,8 @@ class Expenditures(Sheet):
             'Professional \& Contractual Services', 
             'Operating Supplies', 
             'Operating Services', 
-            'Fixed Charges',
             'Equipment Acquisition',
+            'Fixed Charges',
+            'Capital Outlays',
             'Other Expenses'
         ]

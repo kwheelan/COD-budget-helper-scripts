@@ -170,22 +170,26 @@ class Sheet(BaseDF):
             fund_df = df[df['Fund #'] == fund]
             fund_df = fund_df[self.value_columns() + 
                               ['Appropriation #', 'Cost Center Name']]
+            processed_funds = pd.DataFrame()
             # get approps
             approps = sorted(set(fund_df['Appropriation #']))
-            approp_df = pd.DataFrame()
+
             for approp in approps:
                 approp_df = fund_df[fund_df['Appropriation #'] == approp]
                 # get cost centers
                 approp_df = self.group_df_by_col(approp_df, col='Cost Center Name')
+                
                 # add the approp total on top
-                if approp_df.shape[0] > 0:
+                if not approp_df.empty:
                     approp_total = self.total_row(approp_df, self.approp_name(approp), 'Cost Center Name')
-                    approp_df = pd.concat([approp_total, approp_df])
-                    final_df = pd.concat([final_df, approp_df])
+                    approp_df = pd.concat([approp_total, approp_df], ignore_index=True)
+                    processed_funds = pd.concat([processed_funds, approp_df], ignore_index=True)
+
             # add the fund total on top
-            if fund_df.shape[0] > 0:
+            if not fund_df.empty:
                 fund_total = self.total_row_without_double_counting(fund_df, self.fund_name(fund), 1, 'Cost Center Name')
-                final_df = pd.concat([fund_total, final_df])
+                processed_funds = pd.concat([fund_total, processed_funds], ignore_index=True)
+                final_df = pd.concat([final_df, processed_funds], ignore_index=True)
         # add total to top and bottom
         # add sums to top and bottom of table
         bottom = self.total_row_without_double_counting(final_df, 'Grand Total', 3, 'Cost Center Name')

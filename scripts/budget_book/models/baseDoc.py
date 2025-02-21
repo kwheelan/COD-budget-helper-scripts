@@ -119,7 +119,7 @@ class BaseDoc:
         # Manually append the DataFrame-to-LaTeX converted table data
         for table in table_list:
             if table.main():
-                doc.append(NoEscape('\n' + rf'\hspace{{0.7cm}}\textbf{{{table.main()}}}'))
+                doc.append(NoEscape('\n' + rf'\hspace{{1.2cm}}\large\textbf{{{table.main()}}}\normalsize'))
             doc.append(NoEscape(table.process_latex()))
         doc.append(NoEscape(r'\end{flushleft}'))
         self.doc.append(NoEscape(r'\end{landscape}'))

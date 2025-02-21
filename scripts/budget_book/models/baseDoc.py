@@ -37,7 +37,6 @@ class BaseDoc:
 
     def create_doc(self, table_list):
         """ Acutally generate document """
-        print('writing latex....')
         # add packages, colors, other custom definitions
         self.add_preamble()
         # create tables
@@ -115,14 +114,15 @@ class BaseDoc:
             '-interaction=nonstopmode',
             '-output-directory', os.path.dirname(self.save_as),  # Specify the output directory
             self.save_as
-        ], check=True)
+            ], 
+            stdout=subprocess.DEVNULL,  # Redirect stdout to prevent terminal output
+            stderr=subprocess.DEVNULL,  # Redirect stderr to prevent terminal output
+            check=True)
 
     def convert_to_pdf(self):
-
-        print('converting to pdf...')
+        # compile to get aux files and generate PDF
         self.compile_latex()
-
-        self.doc.generate_pdf(self.save_as, clean_tex=False, compiler='pdflatex')
+        self.doc.generate_pdf(self.save_as, clean_tex=True, compiler='pdflatex')
 
 
     

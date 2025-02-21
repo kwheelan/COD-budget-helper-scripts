@@ -43,7 +43,7 @@ class SummaryCategoryTable(BaseTable):
         #self.bold_cols(['Category', 'Variance FY25 vs FY26'])
         self.bold_rows([0, 1, self.last_row()])
         self.highlight_rows([1, self.last_row()], self.primary_color)
-        self.add_tab(col=0, row_list=range(2, self.last_row()))
+        self.add_tab(col=0, row_list=range(2, self.last_row()), length='1cm')
         self.outline_last_row(self.line_color)
         self.replace_header(self.header())
         return self.latex

@@ -1,5 +1,5 @@
 
-from models import BaseTable
+from models.baseTable import BaseTable
 from models.BudgetData.expenditures import Expenditures
 from models.BudgetData.revenues import Revenues
 from .tableHeader import Header
@@ -20,6 +20,8 @@ class SummaryCategoryTable(BaseTable):
         return r'>{\arraybackslash}p{11.5cm}' + r'>{\centering\arraybackslash}p{2.25cm}' * (n_cols - 1) 
 
     def header(self):
+        if self.isEmpty() or self.subheaders() == []:
+            return ''
         return Header.summary_categories(self.main(), self.subheaders())
     
     def divider(self):
@@ -36,6 +38,11 @@ class SummaryCategoryTable(BaseTable):
         ix = self.last_row()
         rows[ix] = self.thick_line(color) + rows[ix] + r'\\' + '\n' + self.thick_line(color)
         self.update_latex(rows[:-1])
+
+    def isEmpty(self):
+        if self.subheaders() == []:
+            return True
+        return super().isEmpty()
 
     def process_latex(self):
         # self.rename_cols()
@@ -73,9 +80,12 @@ class RevenueCategories(SummaryCategoryTable):
             custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
-        subheaders = ['BUDGET DEVELOPMENT',
+        if dept_name is not None:
+            subheaders = ['BUDGET DEVELOPMENT',
                       'REVENUES BY SUMMARY CATEGORY - ALL FUNDS',
                       'DEPARTMENT ' + dept_name.upper()]
+        else: 
+            subheaders = []
         super().__init__(custom_df, 'green1', 'linegreen', main_header, subheaders)
 
     def table_data(self):

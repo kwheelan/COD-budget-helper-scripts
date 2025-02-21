@@ -8,7 +8,7 @@ class Header():
              jobName):        
             
         title = r"""
-            \specialrule{1.5pt}{0pt}{0pt}
+            \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
             \multicolumn{1}{|l}{
             \textbf{\shortstack[l]{
                 \rule{0pt}{2em} % Top space adjustment
@@ -39,7 +39,7 @@ class Header():
             \multicolumn{1}{c|}{
             \textbf{\shortstack{FY2029 \\ Forecast}}
             } \\
-            \specialrule{1.5pt}{0pt}{0pt}
+            \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
             """
         
         firsthead = title + '\n' + r'\endfirsthead'
@@ -112,3 +112,56 @@ class Header():
                          cc = True,
                          jobName=False
                          )
+    
+    @staticmethod
+    def summary_table():
+        return r"""
+        \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
+        \rowcolor{detroitgreen}
+        \multirow{2}{*}{} & 
+        \multicolumn{2}{c|}{\rule{0pt}{0.35cm}\textbf{FY2024 Actual}\rule[-0.1cm]{0pt}{0.25cm}} & 
+        \multicolumn{2}{c|}{\textbf{FY2025 Adopted}} & 
+        \multicolumn{2}{c|}{\textbf{FY2026 Adopted}} \\
+        \cline{2-7}
+        \cline{2-7}
+        \rowcolor{detroitgreen}
+        & \multicolumn{1}{c|}{\rule{0pt}{0.35cm}\textbf{General Fund}}
+        &  \multicolumn{1}{c|}{\textbf{All Funds}} &
+        \multicolumn{1}{c|}{\textbf{General Fund}} & 
+        \multicolumn{1}{c|}{\textbf{ All Funds}} & 
+        \multicolumn{1}{c|}{\textbf{General Fund}} & 
+        \multicolumn{1}{c|}{\textbf{All Funds}} \\
+        \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
+        """
+    
+    @staticmethod
+    def summary_table2():
+        return r"""
+        \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
+        \rowcolor{detroitgreen}
+        \multirow{2}{*}{} & 
+        \multicolumn{2}{c|}{\rule{0pt}{0.35cm}\textbf{FY2027 Forecast}\rule[-0.1cm]{0pt}{0.25cm}} & 
+        \multicolumn{2}{c|}{\textbf{FY2028 Forecast}} & 
+        \multicolumn{2}{c|}{\textbf{FY2029 Forecast}} \\
+        \cline{2-7}
+        \cline{2-7}
+        \rowcolor{detroitgreen}
+        & \multicolumn{1}{c|}{\rule{0pt}{0.35cm}\textbf{General Fund}}
+        &  \multicolumn{1}{c|}{\textbf{All Funds}} &
+        \multicolumn{1}{c|}{\textbf{General Fund}} & 
+        \multicolumn{1}{c|}{\textbf{ All Funds}} & 
+        \multicolumn{1}{c|}{\textbf{General Fund}} & 
+        \multicolumn{1}{c|}{\textbf{All Funds}} \\
+        \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
+        """
+
+    @staticmethod
+    def summary_table3():
+        return r"""
+        \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
+        \rowcolor{detroitgreen}
+        \multirow{2}{*}{} & 
+        \multicolumn{1}{c|}{\rule{0pt}{0.75cm}\textbf{\shortstack{FY2024 \\ Adopted}}\rule[-0.1cm]{0pt}{0.25cm}} & 
+        \multicolumn{1}{c|}{\textbf{\shortstack{FY2025 \\ Adopted}}} \\
+        \arrayrulecolor{black}\specialrule{1.5pt}{0pt}{0pt}
+        """

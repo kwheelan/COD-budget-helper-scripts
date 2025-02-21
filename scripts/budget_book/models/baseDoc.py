@@ -3,6 +3,7 @@ from pylatex import Document, Section, Subsection, Table, NoEscape, Package
 import os
 from constants import OUTPUT
 import subprocess
+from .SectionB import SummaryTable
 
 
 class BaseDoc:
@@ -41,13 +42,12 @@ class BaseDoc:
         self.add_preamble()
         # create tables
         for table in table_list:
-            if not table.isEmpty():
-                # make page landscape
-                self.doc.append(NoEscape(r'\begin{landscape}'))
-                self.latex_table(self.doc, table)
-                self.doc.append(NoEscape(r'\end{landscape}'))
-                self.doc.append(NoEscape(r'\newpage'))
+            if type(table) is list:
+                self.summary_tables(self.doc, table)
 
+            elif not table.isEmpty():
+                self.latex_table(self.doc, table)
+                
     def define_color(self, name, rgb: tuple[int, int, int]):
         r, g, b = rgb
         self.doc.append(NoEscape(rf'\definecolor{{{name}}}{{RGB}}{{{r},{g},{b}}}'))
@@ -80,16 +80,16 @@ class BaseDoc:
             doc.append(NoEscape(table.main()))
         # add a line for each subheader
         for line in table.subheaders():
-            # if final line of bold area, close with }
-            if line == table.subheaders()[-1] and bold:  
-                doc.append(NoEscape(rf'\\ {{{line}}}' + r'}'))
-            else:
-                doc.append(NoEscape(rf'\\ {{{line}}}'))
+            doc.append(NoEscape(rf'\\ {{{line}}}'))
+        if bold:
+            doc.append(NoEscape(r'}'))
         doc.append(NoEscape(r'\end{center}'))
 
     def latex_table(self, doc, table):
         """ Create table from doc and table object """
         
+        # make page landscape
+        self.doc.append(NoEscape(r'\begin{landscape}'))
         # table header
         self.header(doc, table)
 
@@ -101,6 +101,29 @@ class BaseDoc:
 
         # Manually append the DataFrame-to-LaTeX converted table data
         doc.append(NoEscape(table.process_latex()))
+        self.doc.append(NoEscape(r'\end{landscape}'))
+        self.doc.append(NoEscape(r'\newpage'))
+
+    def summary_tables(self, doc, table_list : list[SummaryTable]):
+        """ Create table from doc and table object """
+        
+        # make page landscape
+        self.doc.append(NoEscape(r'\begin{landscape}'))
+        # page header
+        table1 = table_list[0]
+        doc.append(NoEscape(r'\begin{center}'))
+        doc.append(NoEscape(rf'\huge \textbf{{{table1.title()}}} \normalsize'))
+        doc.append(NoEscape(r'\end{center}'))
+        doc.append(NoEscape(r'\begin{flushleft}'))
+
+        # Manually append the DataFrame-to-LaTeX converted table data
+        for table in table_list:
+            if table.main():
+                doc.append(NoEscape('\n' + rf'\hspace{{0.7cm}}\textbf{{{table.main()}}}'))
+            doc.append(NoEscape(table.process_latex()))
+        doc.append(NoEscape(r'\end{flushleft}'))
+        self.doc.append(NoEscape(r'\end{landscape}'))
+        self.doc.append(NoEscape(r'\newpage'))
 
     def save_as_latex(self):
         self.create_doc(self.table_list)

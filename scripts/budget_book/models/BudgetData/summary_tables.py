@@ -1,14 +1,18 @@
 
 from . import Sheet, Revenues, Expenditures, FTEs
+from models import BaseDF
 import pandas as pd
 
-class Summary():
+class Summary(BaseDF):
     """ Create dataframes for the summary tables """
 
     def __init__(self, rev : Revenues, exp : Expenditures, positions : FTEs):
         self.rev = rev
         self.exp = exp
         self.ftes = positions
+        # placeholder
+        df = rev.raw_df
+        super().__init__(df)
 
     @staticmethod
     def value_columns():
@@ -20,13 +24,18 @@ class Summary():
                 'FY29 Forecast']
 
     def collapse(self, dept : str, data : Sheet):
+
+        # get department data
         df = data.filter_by_dept(dept)
-        general_fund = df[df['Fund #'] == '1000']
 
         # convert to numeric
         df[self.value_columns()] = df[self.value_columns()].replace(
             ',', '', regex=True).apply(
             pd.to_numeric, errors='coerce')
+
+        # separate GF from all funds
+        df['Fund #'] = df['Fund #'].replace(',', '', regex=True)
+        general_fund = df[df['Fund #'] == '1000']
 
         # Build aggregation dictionary using list comprehension
         agg_dict = {col: 'sum' for col in self.value_columns()}
@@ -49,13 +58,6 @@ class Summary():
     
     def exp_rows(self, dept):
         return self.collapse(dept, self.exp)
-    
-    # def total_row(self, df, name, col = 'title'):
-    #     # Calculate the sum for each numeric column
-    #     sum_row = df[self.value_columns()].sum()
-    #     row_dict = {col: name}
-    #     row_dict.update(sum_row)
-    #     return pd.DataFrame([row_dict])
 
     def table1(self, dept):
         rev = self.rev_rows(dept)
@@ -83,3 +85,49 @@ class Summary():
     def table1_part2(self, dept):
         table = self.table1(dept)
         return table.iloc[:, [0, 7, 8, 9, 10, 11, 12]]
+
+    def total_row(self, df, name, cols, col = 'title'):
+        # Calculate the sum for each numeric column
+        sum_row = df[cols].sum()
+        row_dict = {col: name}
+        row_dict.update(sum_row)
+        return pd.DataFrame([row_dict])
+
+    def table3(self, dept):
+        df = self.exp.filter_by_dept(dept)
+
+        # columns
+        cols = ['FY25 Adopted', 'FY26 Adopted']
+
+        # convert to numeric
+        df[cols] = df[cols].replace(
+            ',', '', regex=True).apply(
+            pd.to_numeric, errors='coerce')
+        
+        # separate GF from all funds
+        df['Fund #'] = df['Fund #'].replace(',', '', regex=True)
+        df = df[df['Fund #'] == '1000']
+
+        # two segments
+        recurring = df[df['Rec vs 1-Time'] == 'Recurring']
+        onetime = df[df['Rec vs 1-Time'] == 'One-Time']
+
+        # Build aggregation dictionary using list comprehension
+        agg_dict = {col: 'sum' for col in cols}
+
+        # sum for every year
+        recurring = recurring.agg(agg_dict).reset_index().set_index('index').transpose()
+        onetime = onetime.agg(agg_dict).reset_index().set_index('index').transpose()
+
+        # combine rows
+        df = pd.concat([recurring, onetime], axis=0, ignore_index=True).reset_index(drop=True)
+
+        # Add first column
+        row_names = pd.DataFrame({'title': ['Recurring Expenditures', 'One-Time Expenditures']})
+        df = pd.concat([row_names, df], axis=1)
+
+        # add total row on bottom
+        total = self.total_row(df, 'Total Expenditures', cols=cols)
+        df = pd.concat([df, total])
+
+        return df

@@ -73,9 +73,12 @@ class RevFundCatTable(FundCategoryTable):
             custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
-        subheaders = ['BUDGET DEVELOPMENT',
-                      'REVENUES BY SUMMARY CATEGORY - FUND DETAIL',
+        if dept_name is not None:
+            subheaders = ['BUDGET DEVELOPMENT',
+                      'EXPENDITURES BY SUMMARY CATEGORY - FUND DETAIL',
                       'DEPARTMENT ' + dept_name.upper()]
+        else: 
+            subheaders = []
         super().__init__(custom_df, 'green1', 
                          'green2', 'green3', 
                          'linegreen', main_header, subheaders)

@@ -85,9 +85,12 @@ class RevFullTable(FundAppropCCTable):
             custom_df = Revenues(filepath)
         dept_name = custom_df.dept_name(dept)
         main_header = 'CITY OF DETROIT'
-        subheaders = ['BUDGET DEVELOPMENT',
+        if dept_name is not None:
+            subheaders = ['BUDGET DEVELOPMENT',
                       r'FINANCIAL DETAIL BY DEPARTMENT, FUND, APPROPRIATION, \& COST CENTER - REVENUES',
                       'DEPARTMENT ' + dept_name.upper()]
+        else: 
+            subheaders = []
         super().__init__(custom_df, 'green1', 
                          'green2', 'green3', 
                          'linegreen', main_header, subheaders)

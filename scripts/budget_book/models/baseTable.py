@@ -22,6 +22,7 @@ class BaseTable:
         return self.table_df.latex_ready_data()
     
     def isEmpty(self):
+        
         data = self.table_data()
         
         # Check if data is None or if it's an empty DataFrame

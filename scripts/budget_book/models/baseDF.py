@@ -32,6 +32,8 @@ class BaseDF:
         # Replace & with \& in all string elements
         if isinstance(text, str):
             return text.replace('&', r'\&')
+        if isinstance(text, str):
+            return text.replace('$', r'\$')
         return text
     
     @staticmethod

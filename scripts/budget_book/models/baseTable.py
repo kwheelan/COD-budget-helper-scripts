@@ -22,8 +22,10 @@ class BaseTable:
         return self.table_df.latex_ready_data()
     
     def isEmpty(self):
-        
-        data = self.table_data()
+        try:
+            data = self.table_data()
+        except:
+            return True
         
         # Check if data is None or if it's an empty DataFrame
         return not (isinstance(data, pd.DataFrame) and not data.empty)
@@ -53,6 +55,10 @@ class BaseTable:
             escape=False, 
             column_format=self.column_format()
         )
+        # remove dollar signs
+        latex = latex.replace('$', r'\$')
+        # remove underscores
+        latex = latex.replace('_', r' ')
         # replace zeroes
         latex = latex.replace('& 0 ', '& - ')
          # Remove midrule, etc
@@ -126,7 +132,7 @@ class BaseTable:
         if not self.table_data():
             return None
         self.latex = self.default_latex()
-        return self.latex   
+        return self.latex  
 
     def merge_rows(self, col_name):
         """ merge rows in a single column (all empty cells merged with value above)"""

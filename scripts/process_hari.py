@@ -73,7 +73,7 @@ headers = ['Account Type', 'Dept #',
 df = df[headers]
 
 # Data "compressed" to put repeat account strings on a single line
-group_columns = headers[0:18]
+group_columns = headers[0:19]
 value_cols = headers[19:]
 df[value_cols] = df[value_cols].astype(float)
 df = df.groupby(group_columns, as_index=False).sum()

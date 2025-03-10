@@ -288,8 +288,8 @@ INCLUDE = [
 
 EXCLUDE = [
     # '18 DSLP',
-    '23 OCFO',
-    # '72 Library'
+    # '23 OCFO',
+    # # '72 Library'
 ]
 
 if __name__ == '__main__':

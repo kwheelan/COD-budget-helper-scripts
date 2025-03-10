@@ -6,7 +6,8 @@ import os
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
-from openpyxl.styles import PatternFill, Alignment, numbers
+from openpyxl.styles import PatternFill, Alignment, numbers, Font
+from openpyxl.formatting.rule import CellIsRule
 
 
 # File paths
@@ -19,7 +20,8 @@ output_file = os.path.join(OUTPUT, 'converted_HARI.xlsx')
 # Read in data
 df = pd.read_excel(filepath, sheet_name='Sheet4', 
                    dtype=str,
-                   skiprows=9#, nrows=100
+                   # nrows=100,
+                   skiprows=9,
                    )
 # print(df)
 
@@ -136,6 +138,13 @@ with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
     # Apply right alignment and currency format to specified columns
     currency_columns = ['Adopted Budget', 'Amended Budget', 
            'Commitment', 'Obligation', 'Actual', 'Funds Available']
+    
+    # Add conditional formatting to make negatives red
+    red_text_rule = CellIsRule(operator='lessThan', formula=['0'], font=Font(color="FF0000"))
+
+    for col_idx in range(1, cols + 1):
+        column_letter = chr(64 + col_idx)
+        worksheet.conditional_formatting.add(f"{column_letter}1:{column_letter}{rows + 3}", red_text_rule)
 
     for col in worksheet.iter_cols(min_col=1, max_col=cols, min_row=1):
         header = col[2].value
@@ -144,4 +153,5 @@ with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
             cell.alignment = Alignment(horizontal='right')
             # Apply currency format to specified columns
             if header in currency_columns:
-                cell.number_format = numbers.FORMAT_CURRENCY_USD_SIMPLE
+                cell.number_format = cell.number_format = '_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)'
+                

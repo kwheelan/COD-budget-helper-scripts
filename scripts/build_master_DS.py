@@ -199,7 +199,7 @@ def find_DS(folder, verbose = False):
     # generate list of reviewed detail sheets
     reviewed_DS = []
     for file in files:
-        if ('(Deputy Budget Director)' in file) and '.xlsx' in file:
+        if ('(Budget Director)' in file) or ('Mayor' in file) and '.xlsx' in file:
             reviewed_DS.append(os.path.join(SOURCE_FOLDER, folder, file))
 
     # return message
@@ -286,8 +286,8 @@ INCLUDE = [
 ]
 
 EXCLUDE = [
-    '23 OCFO',
-    '72 Library'
+    # '23 OCFO',
+    # '72 Library'
 ]
 
 if __name__ == '__main__':

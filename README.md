@@ -25,6 +25,11 @@
 
 ## Contents
 
- - **Position Detail** creates a separate Excel file for each department to track monthly position amendments 
- - **Procurement** uses a master file of formatted procurement data to filter and copy this data to the non-personnel tab of the relevant department and division specific detail sheets.
- - **alter_formulas**
+ - **budget_book/** contains scripts to convert the budget model into 
+ - **alter_formulas** allows the user to convert formulas in all departmental detail sheets to match the most recent approval column
+ - **build_master_DS** knits together all of the individual department-level detail sheets to create one, city-level master Excel file
+ - **convert_to_obj_level** converts the master detail sheet to the object level for entry into the budget model
+ - **move_procurement_data_to_DS** uses a master file of formatted procurement data to filter and copy this data to the non-personnel tab of the relevant department and division specific detail sheets.
+ - **process_hari** converts the HARI report into a usable format
+ - **split_position_detail_by_dept** creates a separate Excel file for each department to track monthly position amendments 
+

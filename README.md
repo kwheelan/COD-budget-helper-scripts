@@ -1,10 +1,5 @@
 # Repo of helper scripts for COD OB
 
-## Contents
-
- - **Position Detail** creates a separate Excel file for each department to track monthly position amendments 
- - **Procurement** uses a master file of formatted procurement data to filter and copy this data to the non-personnel tab of the relevant department and division specific detail sheets
-
 ## How to use
 
  - Download the relevant programs
@@ -27,3 +22,9 @@
    - You may be prompted to sign-in with your new GitHub credentials.
    - When the terminal is finished, paste `pip install -r requirements.txt` on the next line in the terminal (after the `>`), which will download all of the Python packages you will need. This might take a few minutes. 
    - When it's finished, click on the top icon on the menu along the left, which should look like two pieces of paper. This should show you the file tree. You should now see a folder inside your new folder called `COD-budget-helper-scripts`. If you expand that folder, you should see another folder called `scripts`.
+
+## Contents
+
+ - **Position Detail** creates a separate Excel file for each department to track monthly position amendments 
+ - **Procurement** uses a master file of formatted procurement data to filter and copy this data to the non-personnel tab of the relevant department and division specific detail sheets.
+ - **alter_formulas**

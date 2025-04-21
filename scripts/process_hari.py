@@ -1,43 +1,63 @@
 """
-Automate the well-formatted HARI report
+This script will automatitcally create the well-formatted HARI report from the emailed report.
+
+K. Wheelan 2025
 """
 
-import os
-import pandas as pd
-from openpyxl import load_workbook
+# ======================================================================================
+# SECION 1: Package imports
+# 
+# Do not edit this section.
+# ======================================================================================
+
+import os # operating system package for opening and saving files
+import pandas as pd # pandas does data manipulation
+from openpyxl import load_workbook # openpyxl has Excel functions
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.styles import PatternFill, Alignment, numbers, Font
 from openpyxl.formatting.rule import CellIsRule
 
+# ======================================================================================
+# SECION 2: Set filepaths
+# 
+# This is where file paths are set. Change some of these variables to match the right
+# file locations on your personal computer. See the comments below.
+# ======================================================================================
 
-# File paths
-DATA = 'input_data/HARI'
-file = os.listdir(DATA)[0]
-filepath = os.path.join(DATA, file)
+# Change the right side of this equality to be the filepath of the original HARI file
+# (ie. the unedited file received via email). Make sure it is surrounded by quotes. 
+INPUT = 'input_data\HARI\FA_OBJParent_V2_RP_Hari_FY25_2230Daily.xlsx'
+
+# Change the right side of this equality to be the folder where you want the converted
+# HARI to be saved. Make sure it is surrounded by quotes. 
 OUTPUT = 'output/HARI/'
-output_file = os.path.join(OUTPUT, 'converted_HARI.xlsx')
 
-# Read in data
-df = pd.read_excel(filepath, sheet_name='Sheet4', 
-                   dtype=str,
-                   # nrows=100,
-                   skiprows=9,
-                   )
-# print(df)
+# Edit the final file name here if you like. Keep the quotes.
+new_file_name = 'converted_HARI.xlsx' 
+output_file = os.path.join(OUTPUT, new_file_name)
 
-# Delete columns
-to_delete = ['FAC_Numbers',
-             'FAC_Names',
-             'PARENT2_VALUE',
-             'PARENT2_DESCRIPTION',
-             'PARENT4_VALUE',
-             'PARENT4_DESCRIPTION',
-             'JournalStatus',
-             'FundsReservedStatus']
-df.drop(to_delete, axis=1, inplace=True)
+# ======================================================================================
+# SECTION 3: Define columns 
+# 
+# This is where we will define steps for the conversion. Edit if needed.
+# ======================================================================================
 
-# Rename headers
-headers = ['Fund #', 'Fund Name',
+# These are columns you want to delete from the original HARI. To add to the list, 
+# add a comma after the last element but before the closing ], hit enter, and add the
+# new column name exactly as in the Excel doc but inside quotes.
+cols_to_delete = ['FAC_Numbers',
+                'FAC_Names',
+                'PARENT2_VALUE',
+                'PARENT2_DESCRIPTION',
+                'PARENT4_VALUE',
+                'PARENT4_DESCRIPTION',
+                'JournalStatus',
+                'FundsReservedStatus']
+
+# These are the new column names for the converted HARI report, listed in order. If 
+# you adjust the list, just make sure every element is split with a comma and all
+# column names are inside quotes.
+new_col_names = ['Fund #', 'Fund Name',
            'Appropriation #', 'Appropriation Name',
            'Cost Center #', 'Cost Center Name',
            'Account Type',
@@ -46,18 +66,16 @@ headers = ['Fund #', 'Fund Name',
            'Activity #', 'Activity Name',
            'Interfund #', 'Interfund Name',
            'Adopted Budget', 'Amended Budget', 
-           'Commitment', 'Obligation', 'Actual', 'Funds Available'
+           'Commitment', 'Obligation', 'Actual', 
+           'Funds Available'
            ]
-df.columns = headers
 
-# Add new columns
-df['Future #'] = '000000'
-df['Future Name'] = 'Undefined Future'
-df['Account String'] = df.apply(lambda row: f"{row['Fund #']}-{row['Appropriation #']}-{row['Cost Center #']}-{row['Object #']}-{row['Project #']}-{row['Activity #']}-{row['Interfund #']}-{row['Future #']}", axis=1)
-df['Dept #'] =  df['Cost Center #'].str[:2]
-
-# Adjust column order
-headers = ['Account Type', 'Dept #',
+# This the list of columns in the desired order for the final HARI report. Changing
+# the list order here will change the column order in the final Excel document. Make 
+# sure that every column listed in new_col_names defined above is also in this list.
+# Newly created columns (Future #, Future Name, Account String, and Dept #) should 
+# also be in this list. 
+new_column_order = ['Account Type', 'Dept #',
            'Fund #', 'Fund Name',
            'Appropriation #', 'Appropriation Name',
            'Cost Center #', 'Cost Center Name',
@@ -70,11 +88,44 @@ headers = ['Account Type', 'Dept #',
            'Adopted Budget', 'Amended Budget', 
            'Commitment', 'Obligation', 'Actual', 'Funds Available'
            ]
-df = df[headers]
 
-# Data "compressed" to put repeat account strings on a single line
-group_columns = headers[0:19]
-value_cols = headers[19:]
+# ======================================================================================
+# SECTION 4: Data manipulation 
+# 
+# This section will read in the data from the original HARI report, delete desired 
+# columns, rename columns, create new columns, reorder columns, aggregate across each 
+# unique account string, and then delete rows of all zeroes. You shouldn't have to 
+# edit this section.
+# ======================================================================================
+
+# Read in data from original Excel sheet
+df = pd.read_excel(INPUT, sheet_name='Sheet4', 
+                   dtype=str,
+                   # nrows=100,
+                   skiprows=9,
+                   )
+
+# Delete specified columns
+df.drop(cols_to_delete, axis=1, inplace=True)
+
+# Rename headers with new column names
+df.columns = new_col_names
+
+# Add new columns and fill with desired default values
+df['Future #'] = '000000'
+df['Future Name'] = 'Undefined Future'
+# acount string is fund-appropriation-CC-object-project-activity-interfund-future
+df['Account String'] = df.apply(lambda row: f"{row['Fund #']}-{row['Appropriation #']}-{row['Cost Center #']}-{row['Object #']}-{row['Project #']}-{row['Activity #']}-{row['Interfund #']}-{row['Future #']}", axis=1)
+# department number is the first 2 digits of the cost center
+df['Dept #'] =  df['Cost Center #'].str[:2]
+
+# Adjust column order
+df = df[new_column_order]
+
+# Data "compressed" to put repeat account strings on a single line 
+# (ie aggregated across each unique account string)
+group_columns = new_column_order[0:19]
+value_cols = new_column_order[19:]
 df[value_cols] = df[value_cols].astype(float)
 df = df.groupby(group_columns, as_index=False).sum()
 
@@ -82,6 +133,13 @@ df = df.groupby(group_columns, as_index=False).sum()
 df = df.loc[~(df[value_cols].sum(axis=1) == 0)]
 # Reset the index of the DataFrame
 df.reset_index(drop=True, inplace=True)
+
+# ======================================================================================
+# SECTION 5: Create and save Excel file 
+# 
+# This section will create the final excel file and save to your previously set file 
+# location. You should not have to edit anything here.
+# ======================================================================================
 
 # Save DataFrame to an Excel file with table formatting
 with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
@@ -130,7 +188,7 @@ with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
     # Right-align every cell
     worksheet['S1'].alignment = Alignment(horizontal='right')
     worksheet['S2'].alignment = Alignment(horizontal='right')
-    # 
+    # define the formulas for the summary rows at the top of the file
     for idx, col_letter in enumerate('tuvwxy', start=1):  
         worksheet[f"{col_letter}{1}"] = f"=SUBTOTAL(9,{col_letter}4:{col_letter}{last_row_number - 1})"
         worksheet[f"{col_letter}{2}"] = f"=SUM({col_letter}4:{col_letter}{last_row_number - 1})"

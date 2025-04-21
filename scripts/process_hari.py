@@ -14,7 +14,7 @@ import os # operating system package for opening and saving files
 import pandas as pd # pandas does data manipulation
 from openpyxl import load_workbook # openpyxl has Excel functions
 from openpyxl.worksheet.table import Table, TableStyleInfo
-from openpyxl.styles import PatternFill, Alignment, numbers, Font
+from openpyxl.styles import PatternFill, Alignment, Font
 from openpyxl.formatting.rule import CellIsRule
 
 # ======================================================================================
@@ -25,12 +25,13 @@ from openpyxl.formatting.rule import CellIsRule
 # ======================================================================================
 
 # Change the right side of this equality to be the filepath of the original HARI file
-# (ie. the unedited file received via email). Make sure it is surrounded by quotes. 
-INPUT = 'input_data\HARI\FA_OBJParent_V2_RP_Hari_FY25_2230Daily.xlsx'
+# (ie. the unedited file received via email). Make sure it is surrounded by quotes and 
+# has the leading r (the r tells it to ignore the \s).
+INPUT = r'input_data\HARI\FA_OBJParent_V2_RP_Hari_FY25_2230Daily.xlsx'
 
 # Change the right side of this equality to be the folder where you want the converted
-# HARI to be saved. Make sure it is surrounded by quotes. 
-OUTPUT = 'output/HARI/'
+# HARI to be saved. Make sure it is surrounded by quotes and has the leading r.
+OUTPUT = r'output/HARI/'
 
 # Edit the final file name here if you like. Keep the quotes.
 new_file_name = 'converted_HARI.xlsx' 

@@ -24,13 +24,13 @@ from openpyxl.worksheet.datavalidation import DataValidation
 # Change the right side of this equality to be the filepath of the folder containing 
 # the detail sheets to be edited. Make sure it is surrounded by quotes and 
 # has the leading r (the r tells it to ignore the \s)
-SOURCE_FOLDER = r'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
+SOURCE_FOLDER = r"C:\Users\brandonn\City of Detroit\M365-OCFO-Budget - Documents\BPA Team\FY 2026\1. Budget Development\08A. Deputy Budget Director Recommend"
 
 # Change the right side of this equality to be the filepath of the folder to save 
 # the edited detail sheets. If you set this to the same location as above, the 
 # edited detail sheets will save over the older versions. Make sure the file path 
 # is surrounded by quotes and has the leading r (the r tells it to ignore the \s)
-SAVE_TO = r'output/formula_replacements/backups'
+SAVE_TO = r"C:\Users\brandonn\City of Detroit\M365-OCFO-Budget - Documents\BPA Team\FY 2026\1. Budget Development\Noah's Sandbox\Adopted Detail Sheets"
 
 # ======================================================================================
 # SECION 3: Set other details (EDIT TO RUN)
@@ -41,7 +41,7 @@ SAVE_TO = r'output/formula_replacements/backups'
 # Update these names to match the names of the tabs with formulas to edit.
 # The tab names must be within quotes.
 SHEETS = [
-    'Adopted Summary', 
+    'Budget Director Summary', 
     'Initiatives Summary']
 
 # Update this phrase to match text in detail sheet file name. Including this "KEY" 
@@ -53,7 +53,7 @@ KEY = '(Budget Director)'
 # different column structure, so we skip it here.) Make sure any department 
 # keywords are in the file names for the detail sheets to skip. Include departments
 # surrounded by quotes and separated by commas.
-EXCLUDE = ['Police', 'DSLP']
+EXCLUDE = ['Police', 'DSLP','Airport','BSEED','CDD','DSLP','DPW','DDoT']
 
 # How many detail sheets to alter? Default is 'All' (that aren't excluded above),
 # but to test the program, you can instead put a number (without quotes), like
@@ -73,24 +73,23 @@ REPLACEMENT_DICT = {
         # Pattern is 'old_column' : 'new_column' (quotes are necessary)
         # For example, 'AG' : 'AR' will find all references to column AG
         # in the FTE tab and replace it with column AR in relevant formulas
-        'AG' : 'AR',
-        'U': 'AO',
-        'AA': 'AP',
-        'AF': 'AQ'},
+        'BA' : 'BZ',
+        'BB': 'CA',
+        'BC': 'CB'},
     'Overtime & Other Personnel' : {
         # Columns to be swapped in summary formulas about the overtime tab
         # Pattern is 'old_column' : 'new_column' (quotes are necessary)
-        'R' : 'AC',
-        'V' : 'AD',
-        'W' : 'AE'},
+        'AK' : 'BD',
+        'AL' : 'BE',
+        'AM' : 'BF'},
     'Revenue' : {
         # Columns to be swapped in summary formulas about the Revenue tab
         # Pattern is 'old_column' : 'new_column' (quotes are necessary)
-        'V' : 'Z'},
+        'AD' : 'AK'},
     'Non-Personnel' : {
         # Columns to be swapped in summary formulas about the non-personnel tab
         # Pattern is 'old_column' : 'new_column' (quotes are necessary)
-        'Y' : 'AC'}
+        'AG' : 'AN'}
 }
 
 # ======================================================================================

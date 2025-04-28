@@ -6,6 +6,12 @@ Iterate through each file in detail_sheets,
  copy to the master DS file and save it
 """
 
+# ======================================================================================
+# SECION 1: Package imports
+# 
+# Do not edit this section.
+# ======================================================================================
+
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill
 import os
@@ -13,65 +19,119 @@ import shutil
 # import custom functions
 from utils.excel_utils import copy_cols, last_data_row, col_range
 
-# ===================== Constants ===============================
+# ======================================================================================
+# SECION 2: Set filepaths
+# 
+# This is where file paths are set. Change some of these variables to match the right
+# file locations on your personal computer. See the comments below.
+# ======================================================================================
 
-# File paths
-DATA = 'input_data'
-OUTPUT = 'output'
-template_file = f'{DATA}/DS_templates/FY26 Detail Sheet Template Fast.xlsx'
-#source_folder = f'{DATA}/detail_sheets_analyst_review'
-SOURCE_FOLDER = 'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
-dest_file = f'{OUTPUT}/master_DS/master_detail_sheet_FY26.xlsx'
+# Change the right side of this equality to be the filepath of the folder where 
+# the detail sheets to be combines are saved. Make sure it is surrounded by quotes and 
+# has the leading r (the r tells it to ignore the \s).DATA = 'input_data'
+SOURCE_FOLDER = r'C:/Users/katrina.wheelan/OneDrive - City of Detroit/Documents - M365-OCFO-Budget/BPA Team/FY 2026/1. Budget Development/08A. Deputy Budget Director Recommend/'
 
-# Sheet name, columns to copy, start row
+# Change the right side of this equality to be the filepath of the folder where
+# you want the final master detail sheet to be saved. Make sure it is surrounded by quotes and 
+# has the leading r (the r tells it to ignore the \s).DATA = 'input_data'
+OUTPUT = r'output/master_DS/'
+
+# Change the right side of this equality to be the name of the final file (master 
+# detail sheet). Make sure it's surrounded by quotes.
+final_file_name = 'master_detail_sheet_FY26.xlsx'
+
+# Make sure this is set to the location of your detail sheet template
+template_file = r'../files/FY26 Detail Sheet Template.xlsx'
+
+# Do not edit the line below
+dest_file = os.path.join(OUTPUT, final_file_name)
+
+# ======================================================================================
+# SECION 3: Set columns for copying
+# 
+# Edit this section if additional columns are added to the detail sheet (ie. extra 
+# approval columns)
+# ======================================================================================
+
+# For each tab, this include the column range to copy. For example, col_range('A', 'BE') 
+# will copy columns A through BE. To include additional columns, replace 'BE' with another 
+# column. 
 SHEETS = {
     'FTE, Salary-Wage, & Benefits' : { 
-        'cols' : col_range('A', 'BE'), # extra column for analyst notes (at least in HR DS)
+        # Below are the columns to copy from each DS in the FTE tab
+        'cols' : col_range('A', 'BE'), 
         'start_row' : 15 },
     'Overtime & Other Personnel' : {
+        # Below are the columns to copy from each DS in the OT tab
         'cols' : col_range('A', 'AN'),
         'start_row' : 15 },
     'Non-Personnel' : {
+        # Below are the columns to copy from each DS in the NP tab
         'cols' : col_range('A', 'AH'),
         'start_row' : 19 },
     'Revenue' : {
+        # Below are the columns to copy from each Revenue in the FTE tab
         'cols' : col_range('A', 'AE'),
         'start_row' : 15 }
 }
 
-# Dictionary to help with summary tab
+# ======================================================================================
+# SECION 4: Set columns for the summary tab
+# 
+# Optionally adjust this section to reflect the correct columns for summarization
+# ======================================================================================
+
+# Adjust as needed to make sure the correct columns are recorded.
 SUMMARY_SECTIONS = {
     'FTE' : {
+        # This the exact name of the tab with FTE information
         'tab' : 'FTE, Salary-Wage, & Benefits',
+        # This is the column that counts the number of FTE
         'count_col' : 'AZ',
+        # this is the column that says whether a line item is baseline or supplemental
         'baseline_col' : 'L'
     }, 
     'Salary & Benefits' : {
+        # This the exact name of the tab with FTE information
         'tab' : 'FTE, Salary-Wage, & Benefits',
+        # This is the column that has the SALARY amount for each line item
         'count_col': 'BC',
+        # this is the column that says whether a line item is baseline or supplemental
         'baseline_col' : 'L'
     }, 
     'Non-Personnel' : {
+        # This the exact name of the tab with non-personel information
         'tab' : 'Non-Personnel',
+        # This is the column that has the amount for each NON-PERSONNEL line item
         'count_col': 'AG',
+        # this is the column that says whether a line item is baseline or supplemental
         'baseline_col' : 'O'
     }, 
     'Overtime' : {
+        # This the exact name of the tab with OT information
         'tab' : 'Overtime & Other Personnel',
+        # This is the column that has the amount for each OVERTIME line item
         'count_col': 'AM',
+        # this is the column that says whether a line item is baseline or supplemental
         'baseline_col' : 'N'
     }, 
     'Revenue' : {
+        # This the exact name of the tab with revenue information
         'tab' : 'Revenue',
+        # This is the column that has the amount for each REVENUE line item
         'count_col': 'AD',
+        # this is the column that says whether a line item is baseline or supplemental
         'baseline_col' : 'P'
     }}
 
+# ======================================================================================
+# SECION 5: Functions and class definitions
+# 
+# DO NOT EDIT BELOW THIS LINE
+# ======================================================================================
+
 # Set the gray fill for background color on Excel cells
 gray_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
-
-# ================== Script functions ===================================
-
 
 def move_data(detail_sheet, destination_file):
     # Load the workbooks

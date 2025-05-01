@@ -26,11 +26,12 @@
 
 ## Contents
 
- - **budget_book/** contains scripts to convert the budget model into 
- - **alter_formulas** allows the user to convert formulas in all departmental detail sheets to match the most recent approval column
- - **build_master_DS** knits together all of the individual department-level detail sheets to create one, city-level master Excel file
- - **convert_to_obj_level** converts the master detail sheet to the object level for entry into the budget model
- - **move_procurement_data_to_DS** uses a master file of formatted procurement data to filter and copy this data to the non-personnel tab of the relevant department and division specific detail sheets.
- - **process_hari** converts the HARI report into a usable format
- - **split_position_detail_by_dept** creates a separate Excel file for each department to track monthly position amendments 
+•	budget_book/ contains scripts to convert the budget model into a individual tables, which are saved as both LaTeX (for conversion to PDF or HTML). They are automatically converted to PDF and optionally combined with Word files that contain departments’ narrative descriptions for the Budget Book. Running scripts/budget_book/main.py will create a PDF for all of Section B of the budget book.
+•	edit_DS_summary_tab.py allows the user to convert formulas in all departmental detail sheets to match the most recent approval column.
+•	build_master_DS.py knits together all of the individual department-level detail sheets to create one, city-level master Excel file.
+•	convert_to_obj_level.py converts the master detail sheet to the object level for entry into the budget model.
+•	move_procurement_data_to_DS.py uses a master file of formatted procurement data to filter and copy this data to the non-personnel tab of the relevant department and division specific detail sheets.
+•	process_hari.py converts the HARI report into a usable format and saves the new Excel file in a  user-specified location.
+•	split_position_detail_by_dept.py creates a separate Excel file for each department to track monthly position amendments.
+
 

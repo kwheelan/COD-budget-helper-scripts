@@ -163,7 +163,7 @@ INCLUDE = [
     '54 OIG',
     '60 36',
     '70 City Clerk',
-    '71 Elections'
+    '71 Elections',
    # '72 Library'
 ]
 
@@ -334,6 +334,8 @@ def include_dept(file):
         if dept in file:
             return dept
     return False
+
+EXCLUDE = None
 
 def exclude_dept(file):
     for dept in EXCLUDE:

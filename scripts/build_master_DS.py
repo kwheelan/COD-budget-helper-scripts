@@ -125,7 +125,50 @@ SUMMARY_SECTIONS = {
     }}
 
 # ======================================================================================
-# SECION 5: Functions and class definitions
+# SECION 5: Departments to include in master detail sheet
+# 
+# ======================================================================================
+
+# Specify departments to include in the master detail sheet. Add any additional departments
+# with quotes around the name, and remove departments from the list by deleting them or adding
+# a pound sign (#) before the first quote on the department's line. Departments with # (might look 
+# green depending on your display settings) will be excluded.
+INCLUDE = [
+    'Airport',
+    'BSEED',
+    '16 CDD',
+    '18 DSLP',
+    '19 DPW',
+    '20 DDoT',
+   # '23 OCFO',
+    '24 Fire',
+    '25 Health',
+    '28 HR',
+    '29 CRIO'
+    '31 DoIT',
+    '32 Law',
+    '33 Mayor',
+    '34 Parking',
+    '35 Non-Dept',
+    '36 HRD Classic',
+    '36 HRD JET Team',
+    '38 PLD',
+    '43 PDD',
+    '45 DAH',
+    '47 GSD',
+    '50 OAG',
+    '51 BZA',
+    '52 Council',
+    '53 Ombuds',
+    '54 OIG',
+    '60 36',
+    '70 City Clerk',
+    '71 Elections'
+   # '72 Library'
+]
+
+# ======================================================================================
+# SECION 6: Functions and class definitions
 # 
 # DO NOT EDIT BELOW THIS LINE
 # ======================================================================================
@@ -307,50 +350,12 @@ def main():
     shutil.copy(template_file, dest_file)
 
     # get list of DS files
-    DS_list = [file for file in create_file_list() if not exclude_dept(file)]
-    # DS_list = [file for file in create_file_list() if include_dept(file)]
+    # DS_list = [file for file in create_file_list() if not exclude_dept(file)]
+    DS_list = [file for file in create_file_list() if include_dept(file)]
     for detail_sheet in DS_list:
         move_data(detail_sheet, dest_file)
     create_summary(dest_file)
     print("Created summary tab")
-
-INCLUDE = [
-    # 'Airport',
-    # 'BSEED',
-    # '16 CDD',
-    # '18 DSLP',
-    # '19 DPW',
-    #'20 DDoT',
-    # '24 Fire',
-    # '25 Health',
-    # '28 HR',
-    # '29 CRIO'
-    # '31 DoIT',
-    # '32 Law',
-    # '33 Mayor',
-    # '34 Parking',
-    # '35 Non-Dept',
-    '36 HRD Classic',
-    # '36 HRD JET Team',
-    # '38 PLD',
-    # '43 PDD',
-    # '45 DAH',
-    # '47 GSD',
-    # '50 OAG',
-    # '51 BZA',
-    # '52 Council',
-    # '53 Ombuds',
-    # '54 OIG',
-    #  '60 36',
-    # '70 City Clerk',
-    # '71 Elections'
-]
-
-EXCLUDE = [
-    # '18 DSLP',
-    # '23 OCFO',
-    # # '72 Library'
-]
 
 if __name__ == '__main__':
     main()

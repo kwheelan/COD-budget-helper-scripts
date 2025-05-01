@@ -11,6 +11,7 @@
    - On the far left side, there is a vertical menu. Click on the extensions icon halfway down the menu, which looks like 4 squares.
    - In the search bar that comes up, type in "Python"
    - Click install
+   - Restart VSCode after installing Python.
  - Set up git and github (version control systems)
    - Create a free account on Github (this site) [here](https://github.com/)
  - Copy this repository to your local laptop

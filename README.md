@@ -5,6 +5,7 @@
  - Download the relevant programs
    - Download [Visual Studio](https://code.visualstudio.com/download), which is the program that allows you write, edit, and test the Python scripts in this repository.
    - Download [Python](https://www.python.org/downloads/). This download is the interpreter, which will let your laptop read and execute scripts written in Python.
+     - NOTE: Make sure you select the option to add to environmental variables. If you miss this the first time, you can re-open the installer, click Modify, and select the environmental variable option.
    - Download [Git](https://git-scm.com/downloads), which is a version control program that will save scripts to the cloud and let you access the scripts in this repository.
  - Activate the Python extension in VSCode
    - Open Visual Studio Code
